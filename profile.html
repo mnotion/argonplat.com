@@ -25,20 +25,68 @@
 
     <main>
         <section>
-            <h1>Log in</h1>
-            <p>Access your Argon profile.</p>
-            <form action="#" method="post">
-                <label for="username">Username or email
-                    <input id="username" name="username" type="text" autocomplete="username" required>
-                </label>
-                <br><br>
-                <label for="password">Password
-                    <input id="password" name="password" type="password" autocomplete="current-password" required>
-                </label>
-                <br><br>
-                <button type="submit">Log in</button>
-            </form>
+            <nav aria-label="Account options">
+                <button type="button" id="login-tab" aria-controls="login-panel" aria-pressed="true">Log in</button>
+                <button type="button" id="signup-tab" aria-controls="signup-panel" aria-pressed="false">Sign up</button>
+            </nav>
+
+            <div id="login-panel">
+                <h1>Log in</h1>
+                <p>Access your Argon profile.</p>
+                <form action="#" method="post">
+                    <label for="login-username">Username or email
+                        <input id="login-username" name="username" type="text" autocomplete="username" required>
+                    </label>
+                    <br><br>
+                    <label for="login-password">Password
+                        <input id="login-password" name="password" type="password" autocomplete="current-password" required>
+                    </label>
+                    <br><br>
+                    <button type="submit">Log in</button>
+                </form>
+            </div>
+
+            <div id="signup-panel" hidden>
+                <h1>Sign up</h1>
+                <p>Create an Argon profile.</p>
+                <form action="#" method="post">
+                    <label for="signup-username">Username
+                        <input id="signup-username" name="username" type="text" autocomplete="username" required>
+                    </label>
+                    <br><br>
+                    <label for="signup-email">Email
+                        <input id="signup-email" name="email" type="email" autocomplete="email" required>
+                    </label>
+                    <br><br>
+                    <label for="signup-password">Password
+                        <input id="signup-password" name="password" type="password" autocomplete="new-password" required>
+                    </label>
+                    <br><br>
+                    <button type="submit">Create account</button>
+                </form>
+            </div>
         </section>
     </main>
+
+    <script>
+        const loginTab = document.getElementById('login-tab');
+        const signupTab = document.getElementById('signup-tab');
+        const loginPanel = document.getElementById('login-panel');
+        const signupPanel = document.getElementById('signup-panel');
+
+        loginTab.addEventListener('click', () => {
+            loginPanel.hidden = false;
+            signupPanel.hidden = true;
+            loginTab.setAttribute('aria-pressed', 'true');
+            signupTab.setAttribute('aria-pressed', 'false');
+        });
+
+        signupTab.addEventListener('click', () => {
+            loginPanel.hidden = true;
+            signupPanel.hidden = false;
+            loginTab.setAttribute('aria-pressed', 'false');
+            signupTab.setAttribute('aria-pressed', 'true');
+        });
+    </script>
 </body>
 </html>
