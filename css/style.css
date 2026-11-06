@@ -1,0 +1,39 @@
+body {
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.navigation {
+  margin-top: 35px;
+}
+
+.navigation td {
+  padding: 0 40px;
+}
+
+.hero h1 {
+  font-size: 48px;
+}
+
+.hero p {
+  font-size: 24px;
+}
+
+.hero span {
+  font-size: 18px;
+}
+
+.back-link {
+  display: inline-block;
+  margin: 35px 40px;
+}
+
+.download-content {
+  min-height: 70vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.download-button {
+  font-size: 20px;
+}
