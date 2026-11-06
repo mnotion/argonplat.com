@@ -183,13 +183,13 @@ source{
   white-space: nowrap;
   transform: translateX(calc(-8% - 14px));
 }
-.exhibition-account {
+.exhibition-tools {
   justify-self: end;
   display: flex;
   align-items: center;
   gap: 18px;
 }
-.exhibition-account input {
+.exhibition-tools input {
   box-sizing: border-box;
   width: 170px;
   max-width: 30vw;

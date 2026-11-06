@@ -9,24 +9,28 @@
 
         <link rel="stylesheet" href="css/style.css">
         <script src="js/main.js" defer></script>
-            </head>
+    </head>
 
 
 
     <body class="exhibition-page">
 
+
+        <!-- exhibition heading and local search -->
         <header class="exhibition-topbar">
+
             <a class="exhibition-home" href="index.html">&lt;-- home</a>
 
             <h1 class="exhibition-title">Exhibition</h1>
 
-            <div class="exhibition-account">
+            <div class="exhibition-tools">
                 <input type="search" aria-label="Search" placeholder="Search">
-                <a href="./account.html">Profile</a>
             </div>
+
         </header>
 
 
+        <!-- content navigation and section grid -->
         <div class="exhibition-layout">
 
             <aside class="exhibition-sidebar" aria-label="Exhibition sidebar">
@@ -35,6 +39,8 @@
                 </div>
             </aside>
 
+
+            <!-- sidebar resize control -->
             <button
                 class="sidebar-resize-handle"
                 type="button"
@@ -44,11 +50,14 @@
             ></button>
 
 
+            <!-- exhibition content -->
             <main class="exhibition-main">
+
                 <section class="exhibition-card-screen" aria-label="Exhibition sections">
 
                     <div class="exhibition-card-grid">
 
+                        <!-- content section -->
                         <section class="exhibition-section">
                             <h2>Content</h2>
 
@@ -57,6 +66,7 @@
                         </section>
 
 
+                        <!-- resources section -->
                         <section class="exhibition-section">
                             <h2>Resources</h2>
 
@@ -65,6 +75,7 @@
                         </section>
 
 
+                        <!-- community section -->
                         <section class="exhibition-section">
                             <h2>Community</h2>
 
@@ -73,11 +84,11 @@
                         </section>
 
 
+                        <!-- personal section -->
                         <section class="exhibition-section">
                             <h2>My stuff</h2>
 
-                            <p>login to create your own repo</p>
-                            <a href="./account.html">Login / Sign up</a>
+                            <p>Personal repositories are not available in this offline-only version.</p>
                         </section>
 
                     </div>
@@ -85,6 +96,7 @@
             </main>
 
         </div>
+
 
     </body>
 </html>
