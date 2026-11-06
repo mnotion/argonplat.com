@@ -8,22 +8,14 @@
   <script src="js/main.js" defer></script>
 </head>
 <body class="exhibition-page">
-  <table class="navigation" width="100%">
-    <tr>
-      <td align="left">
-        <a href="index.html">Argon</a>&nbsp;&nbsp;
-        <a href="#">Profile</a>&nbsp;&nbsp;
-        Search
-      </td>
-      <td align="right">
-        <a href="download.html">Download</a>&nbsp;&nbsp;
-        <a href="Exhibition.html">Exhibition</a>&nbsp;&nbsp;
-        Wiki&nbsp;&nbsp;
-        Forum
-      </td>
-    </tr>
-  </table>
-
+  <header class="exhibition-topbar">
+    <a class="exhibition-home" href="index.html">&lt;-- home</a>
+    <h1 class="exhibition-title">Exhibition</h1>
+    <div class="exhibition-account">
+      <input type="search" aria-label="Search" placeholder="Search">
+      <a href="#">Profile</a>
+    </div>
+  </header>
   <div class="exhibition-layout">
     <aside class="exhibition-sidebar" aria-label="Exhibition sidebar"></aside>
     <main class="exhibition-main"></main>

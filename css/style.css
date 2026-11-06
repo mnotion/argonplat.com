@@ -149,3 +149,39 @@ body {
     flex-basis: 100px;
   }
 }
+
+/* Exhibition top bar */
+.exhibition-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-sizing: border-box;
+  height: 60px;
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  align-items: center;
+  padding: 0 24px;
+  background: #fff;
+  border-bottom: 2px solid #000;
+}
+.exhibition-home { justify-self: start; }
+.exhibition-title {
+  justify-self: center;
+  margin: 0;
+  font-size: 28px;
+  white-space: nowrap;
+  transform: translateX(-8%);
+}
+.exhibition-account {
+  justify-self: end;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+.exhibition-account input {
+  box-sizing: border-box;
+  width: 170px;
+  max-width: 30vw;
+  padding: 6px 9px;
+}
