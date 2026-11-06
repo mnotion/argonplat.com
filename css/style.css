@@ -222,3 +222,11 @@ body {
   .exhibition-card-screen { padding: 20px; }
   .exhibition-card-grid { grid-template-columns: 1fr; gap: 16px; }
 }
+
+/* Sidebar path placeholder */
+.exhibition-sidebar { position: relative; }
+.sidebar-path-box {
+  position: absolute; top: 50%; left: 16px; right: 16px;
+  box-sizing: border-box; padding: 14px 8px; border: 1px solid #ddd;
+  text-align: center; font-size: 14px; transform: translateY(-50%);
+}
