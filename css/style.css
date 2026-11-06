@@ -190,7 +190,7 @@ body {
 .exhibition-card-screen {
   box-sizing: border-box;
   min-height: calc(100vh - 60px);
-  padding: 20px 48px 48px;
+  padding: 48px;
 }
 .exhibition-card-grid {
   display: grid;
