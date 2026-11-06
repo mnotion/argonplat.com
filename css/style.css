@@ -116,3 +116,36 @@ body {
   align-items: center;
   transform: translateY(-6vh);
 }
+
+/* Exhibition page layout */
+.exhibition-page {
+  margin: 0;
+}
+
+.exhibition-page .navigation {
+  box-sizing: border-box;
+  border-bottom: 2px solid #000;
+}
+
+.exhibition-layout {
+  display: flex;
+  min-height: calc(100vh - 59px);
+}
+
+.exhibition-sidebar {
+  box-sizing: border-box;
+  flex: 0 0 260px;
+  min-height: calc(100vh - 59px);
+  border-right: 4px solid #000;
+}
+
+.exhibition-main {
+  flex: 1;
+  min-width: 0;
+}
+
+@media (max-width: 650px) {
+  .exhibition-sidebar {
+    flex-basis: 100px;
+  }
+}
