@@ -6,7 +6,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const sidebar = document.querySelector(".exhibition-sidebar");
   const handle = document.querySelector(".sidebar-resize-handle");
   if (!sidebar || !handle) return;
-  const min = 180;
+  const min = 0;
   const max = 360;
   let dragging = false;
   const resize = (clientX) => {
