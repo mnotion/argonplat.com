@@ -186,7 +186,7 @@ body {
   padding: 6px 9px;
 }
 
-/* Exhibition card screen */
+/* Exhibition section labels */
 .exhibition-card-screen {
   box-sizing: border-box;
   min-height: calc(100vh - 60px);
@@ -198,14 +198,10 @@ body {
   grid-template-rows: repeat(2, minmax(180px, 1fr));
   gap: 28px;
   min-height: calc(100vh - 156px);
-}
-.exhibition-card {
-  display: flex;
   align-items: center;
-  justify-content: center;
-  border: 1px solid #ddd;
+  justify-items: center;
 }
-.exhibition-card h2 {
+.exhibition-card-grid h2 {
   margin: 0;
   font-size: 28px;
 }
