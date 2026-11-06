@@ -1,7 +1,7 @@
 // entry point
 
 
-// sidebar resize login, roughly
+// - sidebar resizing, kept simple for pointer and keyboard input
 document.addEventListener("DOMContentLoaded", () => {
   const sidebar = document.querySelector(".exhibition-sidebar");
   const handle = document.querySelector(".sidebar-resize-handle");
