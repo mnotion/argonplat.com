@@ -2,6 +2,12 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+source{ 
+  top: 0;
+  z-index: 250;; grid-auto-flow: row; grid-template-columns: 25fr; grid-template-rows: 1fr; grid-template-areas: "source"; position: sticky; background: #fff; border-bottom: 1px solid #ddd;
+  
+}
+
 .navigation {
   position: sticky;
   top: 0;
