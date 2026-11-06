@@ -185,3 +185,35 @@ body {
   max-width: 30vw;
   padding: 6px 9px;
 }
+
+/* Exhibition card screen */
+.exhibition-card-screen {
+  box-sizing: border-box;
+  min-height: calc(100vh - 60px);
+  padding: 48px;
+}
+.exhibition-card-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-rows: repeat(2, minmax(180px, 1fr));
+  gap: 28px;
+  min-height: calc(100vh - 156px);
+}
+.exhibition-card {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #ddd;
+}
+.exhibition-card h2 {
+  margin: 0;
+  font-size: 28px;
+}
+@media (max-width: 650px) {
+  .exhibition-card-screen { padding: 20px; }
+  .exhibition-card-grid {
+    grid-template-columns: 1fr;
+    grid-template-rows: repeat(4, minmax(140px, 1fr));
+    gap: 16px;
+  }
+}
