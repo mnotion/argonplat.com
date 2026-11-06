@@ -1,63 +1,85 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Argon</title>
-  <link rel="stylesheet" href="css/style.css">
-  <script src="js/main.js" defer></script>
-</head>
-<!-- layout notes
-- top bit is nav or title stuff
-- main content goes after it
-- keep each chunk separate so edits dont spill everywhere
--->
-<body>
-  <table class="navigation" width="100%">
-    <tr>
-      <td align="left">
-        Argon&nbsp;&nbsp;
-        <a href="#">Profile</a>&nbsp;&nbsp;
-        Search
-      </td>
-      <td align="right">
-        <a href="download.html">Download</a>&nbsp;&nbsp;
-        <a href="Exhibition.html">Exhibition</a>&nbsp;&nbsp;
-        Wiki&nbsp;&nbsp;
-        Forum
-      </td>
-    </tr>
-  </table>
 
-  <br><br><br>
-  <div class="hero" align="center">
-    <h1>Just get to work</h1>
-    <p>You still switch between X, Y, Z...?</p>
-    <p>There's no need for that</p>
-    <a class="get-started" href="#getting-started">Get started</a>
-  </div>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <section id="getting-started" class="getting-started">
-    <h2>Get started with Argon</h2>
-    <div class="steps">
-      <article class="step">
-        <span class="step-number">step 1</span>
-        <h3>download</h3>
-        <a class="download-button" href="https://github.com/mnotion/argon.web/releases/download/argon-iss-0.1.5/Argon-Setup-0.1.5.exe">Download Argon</a>
-      </article>
-      <article class="step">
-        <span class="step-number">step 2</span>
-        <h3>install</h3>
-      </article>
-      <article class="step">
-        <span class="step-number">step 3</span>
-        <h3>import</h3>
-      </article>
-      <article class="step">
-        <span class="step-number">step 4</span>
-        <h3>lock in</h3>
-      </article>
-    </div>
-  </section>
-</body>
+        <title>Argon</title>
+
+        <link rel="stylesheet" href="css/style.css">
+        <script src="js/main.js" defer></script>
+    </head>
+
+    <!-- layout notes
+        - top bit is nav or title stuff
+        - main content goes after it
+        - keep each chunk separate so edits dont spill everywhere
+    -->
+
+    <body>
+
+        <!-- navigation row -->
+        <table class="navigation" width="100%">
+            <tr>
+                <td align="left">
+                    Argon&nbsp;&nbsp;
+                    <a href="#">Profile</a>&nbsp;&nbsp;
+                    Search
+                </td>
+
+                <td align="right">
+                    <a href="download.html">Download</a>&nbsp;&nbsp;
+                    <a href="Exhibition.html">Exhibition</a>&nbsp;&nbsp;
+                    Wiki&nbsp;&nbsp;
+                    Forum
+                </td>
+            </tr>
+        </table>
+
+
+        <!-- main intro -->
+        <br><br><br>
+
+        <div class="hero" align="center">
+            <h1>Just get to work</h1>
+
+            <p>You still switch between X, Y, Z...?</p>
+            <p>There's no need for that</p>
+
+            <a class="get-started" href="#getting-started">Get started</a>
+        </div>
+
+
+        <!-- setup steps -->
+        <section id="getting-started" class="getting-started">
+            <h2>Get started with Argon</h2>
+
+            <div class="steps">
+
+                <article class="step">
+                    <span class="step-number">step 1</span>
+                    <h3>download</h3>
+                    <a class="download-button" href="https://github.com/mnotion/argon.web/releases/download/argon-iss-0.1.5/Argon-Setup-0.1.5.exe">Download Argon</a>
+                </article>
+
+                <article class="step">
+                    <span class="step-number">step 2</span>
+                    <h3>install</h3>
+                </article>
+
+                <article class="step">
+                    <span class="step-number">step 3</span>
+                    <h3>import</h3>
+                </article>
+
+                <article class="step">
+                    <span class="step-number">step 4</span>
+                    <h3>lock in</h3>
+                </article>
+
+            </div>
+        </section>
+
+    </body>
 </html>

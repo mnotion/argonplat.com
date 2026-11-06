@@ -1,41 +1,103 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Exhibition — Argon</title>
-  <link rel="stylesheet" href="css/style.css">
-  <script src="js/main.js" defer></script>
-</head>
-<!-- layout notes
-- top bit is nav or title stuff
-- main content goes after it
-- keep each chunk separate so edits dont spill everywhere
--->
-<body class="exhibition-page">
-  <header class="exhibition-topbar">
-    <a class="exhibition-home" href="index.html">&lt;-- home</a>
-    <h1 class="exhibition-title">Exhibition</h1>
-    <div class="exhibition-account">
-      <input type="search" aria-label="Search" placeholder="Search">
-      <a href="#">Profile</a>
-    </div>
-  </header>
-  <!-- sidebar sits next to main, handle is its own bit -->
-  <div class="exhibition-layout">
-    <aside class="exhibition-sidebar" aria-label="Exhibition sidebar"><div class="sidebar-path-box">click something to show path</div></aside>
-    <button class="sidebar-resize-handle" type="button" aria-label="Resize sidebar" aria-valuemin="180" aria-valuemax="360"></button>
-    <main class="exhibition-main">
-      <section class="exhibition-card-screen" aria-label="Exhibition sections">
-        <!-- each section is its own independent block -->
-        <div class="exhibition-card-grid">
-          <section class="exhibition-section"><h2>Content</h2><a href="#">a-level</a><a href="#">flashcards</a></section>
-          <section class="exhibition-section"><h2>Resources</h2><a href="#">a-level</a><a href="#">.agn's</a></section>
-          <section class="exhibition-section"><h2>Community</h2><a href="#">resources</a><a href="#">content</a></section>
-          <section class="exhibition-section"><h2>My stuff</h2><p>(login to create your own repo)</p></section>
+
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+        <title>Exhibition — Argon</title>
+
+        <link rel="stylesheet" href="css/style.css">
+        <script src="js/main.js" defer></script>
+    </head>
+
+    <!-- layout notes
+        - top bit is nav or title stuff
+        - main content goes after it
+        - keep each chunk separate so edits dont spill everywhere
+    -->
+
+    <body class="exhibition-page">
+
+        <!-- top bar -->
+        <header class="exhibition-topbar">
+            <a class="exhibition-home" href="index.html">&lt;-- home</a>
+
+            <h1 class="exhibition-title">Exhibition</h1>
+
+            <div class="exhibition-account">
+                <input type="search" aria-label="Search" placeholder="Search">
+                <a href="#">Profile</a>
+            </div>
+        </header>
+
+
+        <!-- sidebar sits next to main, handle is its own bit -->
+        <div class="exhibition-layout">
+
+            <!-- sidebar -->
+            <aside class="exhibition-sidebar" aria-label="Exhibition sidebar">
+                <div class="sidebar-path-box">
+                    click something to show path
+                </div>
+            </aside>
+
+            <!-- resize handle -->
+            <button
+                class="sidebar-resize-handle"
+                type="button"
+                aria-label="Resize sidebar"
+                aria-valuemin="180"
+                aria-valuemax="360"
+            ></button>
+
+
+            <!-- main exhibition area -->
+            <main class="exhibition-main">
+                <section class="exhibition-card-screen" aria-label="Exhibition sections">
+
+                    <!-- each section is its own independent block -->
+                    <div class="exhibition-card-grid">
+
+                        <!-- content section -->
+                        <section class="exhibition-section">
+                            <h2>Content</h2>
+
+                            <a href="#">a-level</a>
+                            <a href="#">flashcards</a>
+                        </section>
+
+
+                        <!-- resources section -->
+                        <section class="exhibition-section">
+                            <h2>Resources</h2>
+
+                            <a href="#">a-level</a>
+                            <a href="#">.agn's</a>
+                        </section>
+
+
+                        <!-- community section -->
+                        <section class="exhibition-section">
+                            <h2>Community</h2>
+
+                            <a href="#">resources</a>
+                            <a href="#">content</a>
+                        </section>
+
+
+                        <!-- personal section -->
+                        <section class="exhibition-section">
+                            <h2>My stuff</h2>
+
+                            <p>(login to create your own repo)</p>
+                        </section>
+
+                    </div>
+                </section>
+            </main>
+
         </div>
-      </section>
-    </main>
-  </div>
-</body>
+
+    </body>
 </html>
