@@ -190,14 +190,14 @@ body {
 .exhibition-card-screen {
   box-sizing: border-box;
   min-height: calc(100vh - 60px);
-  padding: 48px;
+  padding: 20px 48px 48px;
 }
 .exhibition-card-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   grid-template-rows: repeat(2, minmax(180px, 1fr));
   gap: 28px;
-  min-height: calc(100vh - 156px);
+  min-height: calc(100vh - 128px);
   align-items: center;
   justify-items: center;
 }
