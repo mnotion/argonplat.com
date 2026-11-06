@@ -186,7 +186,7 @@ body {
   padding: 6px 9px;
 }
 
-/* Exhibition section labels */
+/* Exhibition independent sections */
 .exhibition-card-screen {
   box-sizing: border-box;
   min-height: calc(100vh - 60px);
@@ -195,29 +195,30 @@ body {
 .exhibition-card-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  grid-template-rows: repeat(2, minmax(180px, 1fr));
   gap: 28px;
-  min-height: calc(100vh - 128px);
-  align-items: center;
-  justify-items: center;
+  align-items: stretch;
 }
-.exhibition-card-grid h2 {
+.exhibition-section {
   box-sizing: border-box;
-  margin: 0;
-  padding: 18px 28px;
-  min-height: 110px;
-  width: 100%;
+  min-height: 220px;
+  padding: 24px;
+  border: 1px solid #ddd;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  border: 1px solid #ddd;
-  font-size: 24px;
+  gap: 10px;
+}
+.exhibition-section h2 {
+  margin: 0 0 8px;
+  font-size: 30px;
+}
+.exhibition-section a,
+.exhibition-section p {
+  margin: 0;
+  font-size: 17px;
 }
 @media (max-width: 650px) {
   .exhibition-card-screen { padding: 20px; }
-  .exhibition-card-grid {
-    grid-template-columns: 1fr;
-    grid-template-rows: repeat(4, minmax(140px, 1fr));
-    gap: 16px;
-  }
+  .exhibition-card-grid { grid-template-columns: 1fr; gap: 16px; }
 }
