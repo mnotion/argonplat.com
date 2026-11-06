@@ -5,41 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Profile · Argon</title>
     <link rel="stylesheet" href="css/style.css">
-    <style>
-        .login-page {
-            min-height: calc(100vh - 59px);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 24px;
-            box-sizing: border-box;
-        }
-        .login-panel {
-            width: 100%;
-            max-width: 360px;
-        }
-        .login-panel h1 { margin: 0 0 12px; font-size: 32px; }
-        .login-panel .intro { color: #666; margin: 0 0 32px; }
-        .login-form { display: flex; flex-direction: column; gap: 16px; }
-        .login-form label { display: flex; flex-direction: column; gap: 8px; }
-        .login-form input {
-            box-sizing: border-box;
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #bbb;
-            font: inherit;
-        }
-        .login-form button {
-            margin-top: 8px;
-            padding: 12px;
-            border: 1px solid #000;
-            background: #000;
-            color: #fff;
-            font: inherit;
-            cursor: pointer;
-        }
-        .login-note { margin-top: 20px; color: #777; font-size: 13px; }
-    </style>
 </head>
 <body>
     <table class="navigation" width="100%">
@@ -58,20 +23,21 @@
         </tr>
     </table>
 
-    <main class="login-page">
-        <section class="login-panel">
+    <main>
+        <section>
             <h1>Log in</h1>
-            <p class="intro">Access your Argon profile.</p>
-            <form class="login-form" action="#" method="post">
+            <p>Access your Argon profile.</p>
+            <form action="#" method="post">
                 <label for="username">Username or email
                     <input id="username" name="username" type="text" autocomplete="username" required>
                 </label>
+                <br><br>
                 <label for="password">Password
                     <input id="password" name="password" type="password" autocomplete="current-password" required>
                 </label>
+                <br><br>
                 <button type="submit">Log in</button>
             </form>
-            <p class="login-note">Login is a visual placeholder; authentication is not connected.</p>
         </section>
     </main>
 </body>
