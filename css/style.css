@@ -117,7 +117,11 @@ body {
   transform: translateY(-6vh);
 }
 
-/* Exhibition page layout */
+/* exhibition layout
+- top bar stays separate from the body split
+- sidebar and main are siblings, not nested into each other
+- widths belong to sidebar rules
+*/
 .exhibition-page {
   margin: 0;
 }
@@ -186,7 +190,11 @@ body {
   padding: 6px 9px;
 }
 
-/* Exhibition independent sections */
+/* section layout
+- grid only handles where blocks sit
+- each section owns its border and inside spacing
+- no shared card wrapper styling leaking into children
+*/
 .exhibition-card-screen {
   box-sizing: border-box;
   min-height: calc(100vh - 60px);
@@ -231,7 +239,11 @@ body {
   text-align: center; font-size: 14px; transform: translateY(-50%);
 }
 
-/* Resizable Exhibition sidebar */
+/* sidebar sizing bits
+- flex basis is the actual width control
+- zero is allowed to tuck it away fully
+- max keeps it from swallowing the content side
+*/
 .exhibition-sidebar {
   flex: 0 0 260px;
   width: 260px;
