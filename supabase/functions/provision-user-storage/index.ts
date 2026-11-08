@@ -93,7 +93,10 @@ Deno.serve(async (req: Request) => {
   }
 
   const metadata = user.user_metadata ?? {};
-  if (metadata.argon_storage_provisioned === true) {
+  if (
+    metadata.argon_storage_provisioned === true &&
+    Number(metadata.argon_storage_schema_version) >= 2
+  ) {
     return json(200, { success: true, alreadyProvisioned: true });
   }
   if (metadata.argon_storage_provisioning_token !== provisioningToken) {
@@ -119,7 +122,9 @@ Deno.serve(async (req: Request) => {
   const bucket = "argon-cloud-storage";
   const region = "eu-central-003";
   const endpoint = "https://s3.eu-central-003.backblazeb2.com";
-  const userPrefix = `argon/userdata/${userId}/`;
+  // UID is the immutable account identity; username is included as a readable label.
+  const userStorageName = `${userId}_${username}`;
+  const userPrefix = `argon/userdata/${userStorageName}/`;
   const createdAt = profile.created_at ?? user.created_at;
 
   const s3 = new S3Client({
@@ -134,13 +139,13 @@ Deno.serve(async (req: Request) => {
 
   const objects = [
     {
-      Key: `argon/config/users/${userId}.json`,
+      Key: `argon/config/users/${userStorageName}.json`,
       Body: jsonBody({
         uid: userId,
         username,
         userdataPrefix: userPrefix,
         createdAt,
-        schemaVersion: 1,
+        schemaVersion: 2,
       }),
     },
     {
@@ -149,7 +154,7 @@ Deno.serve(async (req: Request) => {
         uid: userId,
         username,
         createdAt,
-        schemaVersion: 1,
+        schemaVersion: 2,
       }),
     },
     {
@@ -157,7 +162,7 @@ Deno.serve(async (req: Request) => {
       Body: jsonBody({
         uid: userId,
         exhibitions: [],
-        schemaVersion: 1,
+        schemaVersion: 2,
       }),
     },
   ];
@@ -181,7 +186,11 @@ Deno.serve(async (req: Request) => {
 
   // Mark complete only after all three objects have been uploaded.
   // Keep other user metadata intact and remove the one-time provisioning token.
-  const updatedMetadata = { ...metadata, argon_storage_provisioned: true };
+  const updatedMetadata = {
+    ...metadata,
+    argon_storage_provisioned: true,
+    argon_storage_schema_version: 2,
+  };
   delete updatedMetadata.argon_storage_provisioning_token;
 
   const { error: updateError } = await admin.auth.admin.updateUserById(userId, {
