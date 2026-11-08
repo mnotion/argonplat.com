@@ -43,7 +43,7 @@ The bucket name, endpoint and region are currently configured in the function so
 - Endpoint: `https://s3.eu-central-003.backblazeb2.com`
 - Region: `eu-central-003`
 
-Create a dedicated B2 application key restricted to this bucket with `writeFiles` permission. Do not use the B2 master key. The integration only uploads objects at signup; it does not need bucket creation, deletion, or public access permissions.
+Create a dedicated B2 application key restricted to this bucket with `writeFiles` permission. Backblaze also documents `listAllBucketNames` as required for compatibility with bucket-restricted SDK keys, so include that capability if the key setup offers it. Do not use the B2 master key. The integration only uploads objects at signup; it does not need `readFiles`, `deleteFiles`, bucket creation, or public access permissions.
 
 ### Deploy the Edge Function
 
