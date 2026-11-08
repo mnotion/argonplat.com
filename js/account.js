@@ -143,7 +143,7 @@
         try {
             await ensureStorageProvisioned(user);
         } catch (error) {
-            setMessage("Your account exists, but its B2 storage setup is pending: " + error.message + " Sign in again to retry.");
+            setMessage("Your account exists, but its B2 storage setup is pending: " + error.message);
         }
     }
 
