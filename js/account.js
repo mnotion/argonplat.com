@@ -60,20 +60,39 @@
     }
 
     async function ensureStorageProvisioned(user) {
-        const metadata = user?.user_metadata || {};
-        if (metadata.argon_storage_provisioned === true) return true;
-
-        const provisioningToken = metadata.argon_storage_provisioning_token;
-        if (!provisioningToken) return false;
-
         if (storageProvisioning.has(user.id)) {
             return storageProvisioning.get(user.id);
         }
 
-        const task = (async () => {
+        // Run after registering the promise so auth-state events cannot start
+        // a second provisioning request while metadata is being updated.
+        const task = Promise.resolve().then(async () => {
+            let currentUser = user;
+            let metadata = currentUser.user_metadata || {};
+            if (metadata.argon_storage_provisioned === true) return true;
+
+            let provisioningToken = metadata.argon_storage_provisioning_token;
+            if (!provisioningToken) {
+                // Existing accounts created before B2 provisioning receive a token
+                // on their next login and are initialized through the same flow.
+                provisioningToken = createProvisioningToken();
+                const { data, error } = await supabase.auth.updateUser({
+                    data: {
+                        ...metadata,
+                        argon_storage_provisioning_token: provisioningToken
+                    }
+                });
+                if (error || !data.user) {
+                    throw new Error(error?.message || "Could not prepare secure storage setup.");
+                }
+                currentUser = data.user;
+                metadata = currentUser.user_metadata || {};
+                provisioningToken = metadata.argon_storage_provisioning_token;
+            }
+
             const { data, error } = await supabase.functions.invoke("provision-user-storage", {
                 body: {
-                    userId: user.id,
+                    userId: currentUser.id,
                     provisioningToken
                 }
             });
@@ -81,11 +100,11 @@
             if (error) throw new Error(await getFunctionErrorMessage(error));
             if (!data?.success) throw new Error(data?.error || "Storage provisioning did not complete.");
 
-            // Keep the current in-memory user object in sync; the server removes the token.
+            // The server marks this user as provisioned and removes the one-time token.
             metadata.argon_storage_provisioned = true;
             delete metadata.argon_storage_provisioning_token;
             return true;
-        })();
+        });
 
         storageProvisioning.set(user.id, task);
         try {
