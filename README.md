@@ -11,9 +11,12 @@ Argon's account page connects directly to Supabase using the browser-safe publis
 
 ## Account deletion
 
-- The account page requires the current password again and the exact confirmation text `DELETE`.
-- The `delete-account` Supabase Edge Function validates the access token, requires a recent authentication time, and deletes the Auth user with the server-side Admin API.
-- The `public.profiles` row is deleted by its `ON DELETE CASCADE` foreign key.
+- The account page asks for the current password again and the exact confirmation text `DELETE`.
+- The password is rechecked using Supabase Auth before deletion.
+- The frontend calls `public.delete_my_account(text)` through the authenticated Supabase client.
+- The database function checks `auth.uid()`, checks the exact confirmation string, and deletes only the caller's own row from `auth.users`.
+- Execute permission is revoked from `PUBLIC` and `anon`, and granted only to `authenticated`.
+- The function runs with an empty `search_path` and uses fully qualified table names. The `public.profiles` row is removed by its existing `ON DELETE CASCADE` foreign key.
+- The account page no longer invokes the `delete-account` Edge Function. That previously deployed function is obsolete and can be removed from Supabase separately.
 - No Supabase Storage buckets or objects exist in this project at present. Argon has not connected Backblaze B2 yet, so this flow cannot remove B2 files or data held outside this Supabase project.
 - Account deletion does not erase email messages, provider backups, logs subject to retention, or browser/device files.
-- The Edge Function must keep its server-side Supabase secret in Supabase-managed environment variables. Never copy it into frontend files or GitHub.
