@@ -455,7 +455,7 @@
     let metadata = user.user_metadata || {};
     if (
       metadata.argon_storage_provisioned === true &&
-      Number(metadata.argon_storage_schema_version) >= 2
+      Number(metadata.argon_storage_schema_version) >= 3
     ) return;
 
     let token = metadata.argon_storage_provisioning_token;
