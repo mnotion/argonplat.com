@@ -377,3 +377,44 @@ source{
   width: 100%;
   flex: 1 1 auto;
 }
+
+
+/* Argon bottom history dock */
+.argon-dock {
+  position: fixed;
+  z-index: 500;
+  left: 50%;
+  bottom: 16px;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border: 1px solid #d8d8d8;
+  border-radius: 14px;
+  background: rgba(255,255,255,.96);
+  box-shadow: 0 4px 20px rgba(0,0,0,.12);
+  backdrop-filter: blur(10px);
+}
+.argon-dock button {
+  min-height: 36px;
+  padding: 6px 10px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: #fff;
+  color: #111;
+  font: inherit;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.argon-dock button:hover:not(:disabled) { border-color: #111; }
+.argon-dock button:disabled { opacity: .35; cursor: default; }
+.argon-dock button span { font-size: 13px; }
+.dock-separator { width: 1px; height: 26px; background: #ddd; margin: 0 3px; }
+@media (max-width: 520px) {
+  .argon-dock { width: calc(100% - 24px); box-sizing: border-box; justify-content: center; gap: 5px; padding: 8px; }
+  .argon-dock button { padding: 6px 7px; }
+  .argon-dock button span { font-size: 11px; }
+}
