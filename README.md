@@ -61,6 +61,30 @@ Add the B2 secrets in the Supabase Dashboard before testing signup. New secrets 
 
 If B2 provisioning fails during signup, the Supabase account remains created. The one-time token stays in Auth metadata, and the next login retries storage provisioning. After successful provisioning, the token is removed.
 
+## My Exhibition file explorer
+
+The My Exhibition page provides a simple file explorer rooted at the signed-in user's `userdata/{uid}_{username}/exhibitions/` prefix. It lists folders and files, navigates nested folders with breadcrumbs, creates folders, accepts drag-and-drop or selected files, and offers download links.
+
+The `exhibition-files` Supabase Edge Function derives the user ID and username from the validated Supabase session and `public.profiles`. The browser cannot supply a storage owner or an arbitrary bucket prefix. All uploads are sent through the Edge Function and written to the user's own exhibition prefix. Each successful upload or folder creation refreshes the displayed folder automatically; there is no manual save step.
+
+For this file explorer, the bucket-restricted B2 application key needs:
+- `listFiles` to browse object keys and folders.
+- `readFiles` to create temporary download links.
+- `writeFiles` to upload files and create folder markers.
+- `listAllBucketNames` for compatibility with bucket-restricted S3 SDK integrations.
+
+Do not grant `deleteFiles` for this UI; it does not include a delete operation. Keep the key restricted to `argon-cloud-storage`. Never put the B2 key into browser code.
+
+Files up to 25 MB are supported in this first version. Uploads are proxied through the authenticated Edge Function, so the bucket does not need browser CORS rules for uploads. Download links expire after five minutes.
+
+Deploy from the repository root:
+
+```bash
+supabase functions deploy exhibition-files
+```
+
+The function uses the existing `B2_APPLICATION_KEY_ID` and `B2_APPLICATION_KEY` Supabase Edge Function secrets.
+
 ## Account deletion
 
 - The account page asks for the current password again and the exact confirmation text `DELETE`.
