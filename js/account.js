@@ -156,27 +156,20 @@
             const { data: { user } } = await supabase.auth.getUser();
             if (!user?.email) throw new Error("Could not identify your signed-in email. Log in again.");
 
-            const { error: reauthError } = await supabase.auth.signInWithPassword({
+            const { data: reauthData, error: reauthError } = await supabase.auth.signInWithPassword({
                 email: user.email,
                 password
             });
             if (reauthError) throw new Error("Password verification failed: " + reauthError.message);
+            if (reauthData.user?.id !== user.id) {
+                throw new Error("Password verification returned a different account. Log in again.");
+            }
 
             setMessage("Deleting your Argon account…");
-            const { error: functionError } = await supabase.functions.invoke("delete-account", {
-                body: { confirmation: "DELETE" }
+            const { error: deleteError } = await supabase.rpc("delete_my_account", {
+                confirmation: "DELETE"
             });
-            if (functionError) {
-                let detail = functionError.message;
-                try {
-                    const response = functionError.context;
-                    if (response && typeof response.json === "function") {
-                        const payload = await response.json();
-                        if (payload?.error) detail = payload.error;
-                    }
-                } catch { /* Keep generic function error. */ }
-                throw new Error(detail || "Account deletion failed.");
-            }
+            if (deleteError) throw new Error(deleteError.message || "Account deletion failed.");
 
             await supabase.auth.signOut({ scope: "local" });
             accountPanel.hidden = true;
