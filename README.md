@@ -17,9 +17,9 @@ When a new user signs up, the frontend generates a cryptographically random, one
 argon/
 ├── config/
 │   └── users/
-│       └── {uid}.json
+│       └── {uid}_{username}.json
 └── userdata/
-    └── {uid}/
+    └── {uid}_{username}/
         ├── user.json
         └── exhibitions/
             └── index.json
@@ -27,7 +27,7 @@ argon/
 
 B2 object keys are prefixes rather than physical folders. The JSON objects cause the corresponding prefixes to appear in the B2 file browser. `exhibitions/index.json` starts with an empty list; signup does not create an exhibition.
 
-The function uses the Supabase-injected `SUPABASE_SECRET_KEYS` only on the server and uses a bucket-restricted Backblaze application key to upload the JSON objects. It does not accept a UID, username, or object path as trusted ownership information from the browser. The requested UID must exist in Supabase Auth and its one-time token must match that user's Auth metadata. After all objects are uploaded, the function marks provisioning complete and removes the one-time token from user metadata.
+The UID and username appear together in both storage paths: `{uid}_{username}`. The JSON files also store the UID and username as separate fields. UID remains the immutable ownership key; username is a readable label. Provisioning schema version 2 updates existing accounts that were previously provisioned with UID-only paths.\n\nThe function uses the Supabase-injected `SUPABASE_SECRET_KEYS` only on the server and uses a bucket-restricted Backblaze application key to upload the JSON objects. It does not accept a UID, username, or object path as trusted ownership information from the browser. The requested UID must exist in Supabase Auth and its one-time token must match that user's Auth metadata. After all objects are uploaded, the function marks provisioning complete and removes the one-time token from user metadata.
 
 ### Configure B2 secrets
 
