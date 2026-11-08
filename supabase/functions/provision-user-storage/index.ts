@@ -59,8 +59,10 @@ Deno.serve(async (req: Request) => {
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const supabaseSecretKey = getSupabaseSecretKey();
-  const b2KeyId = Deno.env.get("B2_APPLICATION_KEY_ID");
-  const b2ApplicationKey = Deno.env.get("B2_APPLICATION_KEY");
+  // Dashboard secrets are sometimes pasted with a trailing newline.
+  // Trim surrounding whitespace before the SDK places these values in HTTP headers.
+  const b2KeyId = Deno.env.get("B2_APPLICATION_KEY_ID")?.trim();
+  const b2ApplicationKey = Deno.env.get("B2_APPLICATION_KEY")?.trim();
 
   if (!supabaseUrl || !supabaseSecretKey) {
     console.error("Provisioning is missing its Supabase server configuration.");
@@ -69,6 +71,10 @@ Deno.serve(async (req: Request) => {
   if (!b2KeyId || !b2ApplicationKey) {
     console.error("Provisioning is missing its Backblaze B2 application key secrets.");
     return json(503, { error: "Backblaze storage credentials have not been configured yet." });
+  }
+  if (/[\\r\\n]/.test(b2KeyId) || /[\\r\\n]/.test(b2ApplicationKey)) {
+    console.error("Backblaze credentials contain embedded line breaks.");
+    return json(503, { error: "The Backblaze credentials contain line breaks. Re-save the two Supabase secrets without extra lines." });
   }
 
   const admin = createClient(supabaseUrl, supabaseSecretKey, {
