@@ -35,23 +35,16 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     const updateButtons = () => {
-      dock.querySelector('[data-history="nav-undo"]').disabled = history.length <= 1;
-      dock.querySelector('[data-history="nav-redo"]').disabled = !history.state || !history.state.argonForward;
+      // Native browser history does not expose a reliable forward-stack length.
+      // Keep navigation controls enabled; history.back()/forward() safely no-op at limits.
+      dock.querySelector('[data-history="nav-undo"]').disabled = false;
+      dock.querySelector('[data-history="nav-redo"]').disabled = false;
       dock.querySelector('[data-history="edit-undo"]').disabled = undoStack.length === 0;
       dock.querySelector('[data-history="edit-redo"]').disabled = redoStack.length === 0;
     };
 
-    // Mark forward visits so the dock can reflect browser navigation availability.
-    const markVisit = () => {
-      try { history.replaceState({ ...(history.state || {}), argonForward: false }, ""); } catch (_) {}
-      updateButtons();
-    };
-    markVisit();
     window.addEventListener("pageshow", updateButtons);
-    window.addEventListener("popstate", () => {
-      try { history.replaceState({ ...(history.state || {}), argonForward: true }, ""); } catch (_) {}
-      updateButtons();
-    });
+    window.addEventListener("popstate", updateButtons);
 
     dock.addEventListener("click", (event) => {
       const button = event.target.closest("button[data-history]");
