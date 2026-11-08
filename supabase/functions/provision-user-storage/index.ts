@@ -144,6 +144,7 @@ Deno.serve(async (req: Request) => {
         uid: userId,
         username,
         userdataPrefix: userPrefix,
+        contentPrefix: `${userPrefix}content/`,
         createdAt,
         schemaVersion: 3,
       }),
@@ -153,6 +154,7 @@ Deno.serve(async (req: Request) => {
       Body: jsonBody({
         uid: userId,
         username,
+        contentPrefix: `${userPrefix}content/`,
         createdAt,
         schemaVersion: 3,
       }),
