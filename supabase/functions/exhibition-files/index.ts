@@ -172,11 +172,10 @@ Deno.serve(async (req: Request) => {
       const relativeFile = cleanRelativePath(body.file);
       if (relativeFile === null || !relativeFile) return json(400, { error: "The file path is invalid." });
 
-      const fileName = relativeFile.split("/").pop() ?? "download";
       const url = await getSignedUrl(s3, new GetObjectCommand({
         Bucket: BUCKET,
         Key: userRoot + relativeFile,
-        ResponseContentDisposition: `attachment; filename="${fileName.replace(/["\\\\\\r\\\\\\n]/g, "_")}"`,
+        ResponseContentDisposition: "attachment",
       }), { expiresIn: 300 });
 
       return json(200, { success: true, url });
