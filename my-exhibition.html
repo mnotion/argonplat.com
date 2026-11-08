@@ -1,9 +1,61 @@
 <!DOCTYPE html>
-<html lang="en"><head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>My Exhibition — Argon</title><link rel="stylesheet" href="css/style.css"><script src="js/main.js" defer></script>
-</head><body class="dashboard-page">
-<header class="exhibition-topbar"><h1 class="exhibition-title">My exhibition</h1></header>
-<main class="exhibition-main"><section class="exhibition-card-screen" aria-label="My exhibition content"><div class="exhibition-card-grid"></div></section></main>
-<footer class="argon-dock" aria-label="History controls"><button type="button" data-history="nav-undo" disabled>↶ <span>Back</span></button><button type="button" data-history="nav-redo" disabled>↷ <span>Forward</span></button><span class="dock-separator"></span><button type="button" data-history="edit-undo" disabled>↶ <span>Undo edit</span></button><button type="button" data-history="edit-redo" disabled>↷ <span>Redo edit</span></button></footer>
-</body></html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Exhibition — Argon</title>
+<link rel="stylesheet" href="css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/auth-config.js"></script>
+<script src="js/main.js" defer></script>
+<script src="js/my-exhibition.js" defer></script>
+</head>
+<body class="dashboard-page my-exhibition-page">
+<header class="exhibition-topbar">
+  <a class="exhibition-home" href="dashboard.html">← dashboard</a>
+  <h1 class="exhibition-title">My exhibition</h1>
+  <div class="exhibition-tools"><span id="exhibition-sync-status" role="status" aria-live="polite">connecting…</span></div>
+</header>
+<main class="my-exhibition-main">
+  <section class="file-explorer" aria-label="My exhibition files">
+    <div class="file-explorer-toolbar">
+      <nav id="file-explorer-breadcrumbs" class="file-explorer-breadcrumbs" aria-label="Current folder">
+        <button type="button" data-path="">exhibitions</button>
+      </nav>
+      <div class="file-explorer-actions">
+        <button type="button" id="new-folder-button">new folder</button>
+        <button type="button" id="upload-files-button">add files</button>
+        <button type="button" id="refresh-files-button">refresh</button>
+        <input id="file-picker" type="file" multiple hidden>
+      </div>
+    </div>
+
+    <form id="new-folder-form" class="new-folder-form" hidden>
+      <label for="new-folder-name">folder name</label>
+      <input id="new-folder-name" name="name" type="text" maxlength="100" autocomplete="off" required>
+      <button type="submit">create</button>
+      <button type="button" id="cancel-new-folder">cancel</button>
+    </form>
+
+    <div id="file-drop-zone" class="file-drop-zone" tabindex="0">
+      <div class="file-drop-message">
+        <strong>drop files here</strong>
+        <span>or select “add files” to upload to this folder</span>
+        <span class="file-drop-limit">up to 25 MB per file</span>
+      </div>
+      <div id="file-explorer-list" class="file-explorer-list" role="list" aria-live="polite">
+        <p class="file-explorer-loading">Loading your exhibition…</p>
+      </div>
+    </div>
+    <p id="file-explorer-message" class="file-explorer-message" role="status" aria-live="polite"></p>
+  </section>
+</main>
+<footer class="argon-dock" aria-label="History controls">
+  <button type="button" data-history="nav-undo" disabled>↶ <span>Back</span></button>
+  <button type="button" data-history="nav-redo" disabled>↷ <span>Forward</span></button>
+  <span class="dock-separator"></span>
+  <button type="button" data-history="edit-undo" disabled>↶ <span>Undo edit</span></button>
+  <button type="button" data-history="edit-redo" disabled>↷ <span>Redo edit</span></button>
+</footer>
+</body>
+</html>
