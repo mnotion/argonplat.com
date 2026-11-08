@@ -233,7 +233,7 @@ Deno.serve(async (req: Request) => {
         folderName.includes("/") ||
         folderName.includes("\\") ||
         /[\u0000-\u001f\u007f]/.test(folderName) ||
-        folderName.length > 100
+        folderName.length > 180
       ) return json(400, { error: "The folder name is invalid." });
 
       await s3.send(new PutObjectCommand({
