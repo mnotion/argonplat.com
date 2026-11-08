@@ -27,8 +27,9 @@
 
   function setStatus(value) {
     status.textContent = value;
-    status.dataset.state = value.toLowerCase().includes("fail") ? "error" :
-      value.toLowerCase().includes("sync") ? "syncing" : "ready";
+    const normalized = value.toLowerCase();
+    status.dataset.state = normalized.includes("fail") ? "error" :
+      normalized.includes("syncing") || normalized.includes("connecting") ? "syncing" : "ready";
   }
 
   function setMessage(value) {
@@ -150,7 +151,6 @@
   }
 
   async function loadFolder(path) {
-    if (busy) return;
     currentPath = path;
     renderBreadcrumbs();
     list.replaceChildren();
