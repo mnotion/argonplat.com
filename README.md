@@ -21,13 +21,15 @@ argon/
 └── userdata/
     └── {uid}_{username}/
         ├── user.json
-        └── exhibitions/
+        ├── exhibitions/
+        │   └── index.json  (reserved metadata)
+        └── content/
             └── index.json
 ```
 
-B2 object keys are prefixes rather than physical folders. The JSON objects cause the corresponding prefixes to appear in the B2 file browser. `exhibitions/index.json` starts with an empty list; signup does not create an exhibition.
+B2 object keys are prefixes rather than physical folders. The JSON objects cause the corresponding prefixes to appear in the B2 file browser. `exhibitions/index.json` remains an empty reserved index for exhibition records. `content/index.json` marks the root directory used by My Exhibition. Signup does not create an exhibition.
 
-The UID and username appear together in both storage paths: `{uid}_{username}`. The JSON files also store the UID and username as separate fields. UID remains the immutable ownership key; username is a readable label. Provisioning schema version 2 updates existing accounts that were previously provisioned with UID-only paths.\n\nThe function uses the Supabase-injected `SUPABASE_SECRET_KEYS` only on the server and uses a bucket-restricted Backblaze application key to upload the JSON objects. It does not accept a UID, username, or object path as trusted ownership information from the browser. The requested UID must exist in Supabase Auth and its one-time token must match that user's Auth metadata. After all objects are uploaded, the function marks provisioning complete and removes the one-time token from user metadata.
+The UID and username appear together in both storage paths: `{uid}_{username}`. The JSON files also store the UID and username as separate fields. UID remains the immutable ownership key; username is a readable label. Provisioning schema version 3 adds the `content/` directory. Existing accounts with earlier storage schemas are upgraded at their next sign-in.\n\nThe function uses the Supabase-injected `SUPABASE_SECRET_KEYS` only on the server and uses a bucket-restricted Backblaze application key to upload the JSON objects. It does not accept a UID, username, or object path as trusted ownership information from the browser. The requested UID must exist in Supabase Auth and its one-time token must match that user's Auth metadata. After all objects are uploaded, the function marks provisioning complete and removes the one-time token from user metadata.
 
 ### Configure B2 secrets
 
@@ -63,9 +65,9 @@ If B2 provisioning fails during signup, the Supabase account remains created. Th
 
 ## My Exhibition file explorer
 
-The My Exhibition page provides a simple file explorer rooted at the signed-in user's `userdata/{uid}_{username}/exhibitions/` prefix. It lists folders and files, navigates nested folders with breadcrumbs, creates folders, accepts drag-and-drop or selected files, and offers download links.
+The My Exhibition page provides a simple file explorer rooted at the signed-in user's `userdata/{uid}_{username}/content/` prefix. It lists folders and files, navigates nested folders with breadcrumbs, creates folders, accepts individual files and entire folder trees through folder selection or drag-and-drop, and offers download links.
 
-The `exhibition-files` Supabase Edge Function derives the user ID and username from the validated Supabase session and `public.profiles`. The browser cannot supply a storage owner or an arbitrary bucket prefix. All uploads are sent through the Edge Function and written to the user's own exhibition prefix. Each successful upload or folder creation refreshes the displayed folder automatically; there is no manual save step.
+The `exhibition-files` Supabase Edge Function derives the user ID and username from the validated Supabase session and `public.profiles`. The browser cannot supply a storage owner or an arbitrary bucket prefix. All uploads are sent through the Edge Function and written to the user's own `content/` prefix. Folder-relative paths are preserved, so folder uploads do not require ZIP archives. Empty folders are represented by B2 folder-marker objects when the browser exposes them. Each successful upload or folder creation refreshes the displayed folder automatically; there is no manual save step.
 
 For this file explorer, the bucket-restricted B2 application key needs:
 - `listFiles` to browse object keys and folders.
@@ -75,7 +77,7 @@ For this file explorer, the bucket-restricted B2 application key needs:
 
 Do not grant `deleteFiles` for this UI; it does not include a delete operation. Keep the key restricted to `argon-cloud-storage`. Never put the B2 key into browser code.
 
-Files up to 25 MB are supported in this first version. Uploads are proxied through the authenticated Edge Function, so the bucket does not need browser CORS rules for uploads. Download links expire after five minutes.
+Files up to 25 MB each are supported in this first version. Folder uploads send each file separately and preserve nested paths. Uploads are proxied through the authenticated Edge Function, so the bucket does not need browser CORS rules for uploads. Download links expire after five minutes.
 
 Deploy from the repository root:
 
