@@ -29,7 +29,9 @@ argon/
 
 B2 object keys are prefixes rather than physical folders. The JSON objects cause the corresponding prefixes to appear in the B2 file browser. `exhibitions/index.json` remains an empty reserved index for exhibition records. `content/index.json` marks the root directory used by My Exhibition. Signup does not create an exhibition.
 
-The UID and username appear together in both storage paths: `{uid}_{username}`. The JSON files also store the UID and username as separate fields. UID remains the immutable ownership key; username is a readable label. Provisioning schema version 3 adds the `content/` directory. Existing accounts with earlier storage schemas are upgraded at their next sign-in.\n\nThe function uses the Supabase-injected `SUPABASE_SECRET_KEYS` only on the server and uses a bucket-restricted Backblaze application key to upload the JSON objects. It does not accept a UID, username, or object path as trusted ownership information from the browser. The requested UID must exist in Supabase Auth and its one-time token must match that user's Auth metadata. After all objects are uploaded, the function marks provisioning complete and removes the one-time token from user metadata.
+The UID and username appear together in both storage paths: `{uid}_{username}`. The JSON files also store the UID and username as separate fields. UID remains the immutable ownership key; username is a readable label. Provisioning schema version 3 adds the `content/` directory. Existing accounts with earlier storage schemas are upgraded at their next sign-in.
+
+The function uses the Supabase-injected `SUPABASE_SECRET_KEYS` only on the server and uses a bucket-restricted Backblaze application key to upload the JSON objects. It does not accept a UID, username, or object path as trusted ownership information from the browser. The requested UID must exist in Supabase Auth and its one-time token must match that user's Auth metadata. After all objects are uploaded, the function marks provisioning complete and removes the one-time token from user metadata.
 
 ### Configure B2 secrets
 
@@ -95,6 +97,6 @@ The function uses the existing `B2_APPLICATION_KEY_ID` and `B2_APPLICATION_KEY` 
 - The database function checks `auth.uid()`, checks the exact confirmation string, and deletes only the caller's own row from `auth.users`.
 - Execute permission is revoked from `PUBLIC` and `anon`, and granted only to `authenticated`.
 - The `public.profiles` row is removed by its existing `ON DELETE CASCADE` foreign key.
-- No Supabase Storage buckets or objects exist in this project at present. Argon's B2 account data is provisioned separately using the UID-prefixed object keys above.
+- Argon uses Backblaze B2 for account files and exhibition content; it does not use Supabase Storage buckets for these files.
 - Account deletion does not yet remove B2 objects. That will need to be added to the deletion workflow before B2-backed user content is stored.
 - Account deletion does not erase email messages, provider backups, logs subject to retention, or browser/device files.
