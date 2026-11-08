@@ -25,8 +25,10 @@
       <div class="file-explorer-actions">
         <button type="button" id="new-folder-button">new folder</button>
         <button type="button" id="upload-files-button">add files</button>
+        <button type="button" id="upload-folder-button">add folder</button>
         <button type="button" id="refresh-files-button">refresh</button>
         <input id="file-picker" type="file" multiple hidden>
+        <input id="folder-picker" type="file" webkitdirectory directory multiple hidden>
       </div>
     </div>
 
@@ -40,7 +42,7 @@
     <div id="file-drop-zone" class="file-drop-zone" tabindex="0">
       <div class="file-drop-message">
         <strong>drop files here</strong>
-        <span>or select “add files” to upload to this folder</span>
+        <span>or select “add files” or “add folder” to upload here</span>
         <span class="file-drop-limit">up to 25 MB per file</span>
       </div>
       <div id="file-explorer-list" class="file-explorer-list" role="list" aria-live="polite">
