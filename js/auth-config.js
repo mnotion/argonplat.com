@@ -1,2 +1,4 @@
-// This URL is created by the Render Blueprint in /render.yaml.
-window.ARGON_API_BASE = "https://argonplat-auth-api.onrender.com";
+// Supabase project connection. The publishable key is designed for browser use.
+// Database access is restricted by the profiles table's Row Level Security policies.
+window.ARGON_SUPABASE_URL = "https://nacwfrsdpglrhzhasmit.supabase.co";
+window.ARGON_SUPABASE_PUBLISHABLE_KEY = "sb_publishable_4OLO5cw2lr_l90MECEAG0A_MJY1NQQF";
