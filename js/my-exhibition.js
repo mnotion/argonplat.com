@@ -367,7 +367,7 @@
     }
     if (
       refreshed.user.user_metadata?.argon_storage_provisioned !== true ||
-      Number(refreshed.user.user_metadata?.argon_storage_schema_version) < 2
+      Number(refreshed.user.user_metadata?.argon_storage_schema_version) < 3
     ) throw new Error("B2 storage setup is not marked complete yet.");
   }
 
