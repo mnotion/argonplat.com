@@ -168,6 +168,20 @@ Deno.serve(async (req: Request) => {
       return json(400, { error: "Invalid JSON request." });
     }
 
+    if (action === "download-url") {
+      const relativeFile = cleanRelativePath(body.file);
+      if (relativeFile === null || !relativeFile) return json(400, { error: "The file path is invalid." });
+
+      const fileName = relativeFile.split("/").pop() ?? "download";
+      const url = await getSignedUrl(s3, new GetObjectCommand({
+        Bucket: BUCKET,
+        Key: userRoot + relativeFile,
+        ResponseContentDisposition: `attachment; filename="${fileName.replace(/["\\\\\\r\\\\\\n]/g, "_")}"`,
+      }), { expiresIn: 300 });
+
+      return json(200, { success: true, url });
+    }
+
     const path = cleanRelativePath(body.path);
     if (path === null) return json(400, { error: "The folder path is invalid." });
     const prefix = userRoot + (path ? path + "/" : "");
@@ -234,19 +248,6 @@ Deno.serve(async (req: Request) => {
         Metadata: { "argon-owner": user.id },
       }));
       return json(200, { success: true, folder: folderName });
-    }
-
-    if (action === "download-url") {
-      const relativeFile = cleanRelativePath(body.file);
-      if (relativeFile === null || !relativeFile) return json(400, { error: "The file path is invalid." });
-
-      const key = userRoot + relativeFile;
-      const url = await getSignedUrl(s3, new GetObjectCommand({
-        Bucket: BUCKET,
-        Key: key,
-      }), { expiresIn: 300 });
-
-      return json(200, { success: true, url });
     }
 
     return json(400, { error: "Unknown file operation." });
