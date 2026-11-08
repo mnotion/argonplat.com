@@ -35,7 +35,7 @@ function decodeHeader(value: string | null): string {
 function cleanRelativePath(value: unknown): string | null {
   if (typeof value !== "string") return null;
   if (value === "") return "";
-  if (value.startsWith("/") || value.includes("\\") || /[\\u0000-\\u001f\\u007f]/.test(value)) {
+  if (value.startsWith("/") || value.includes("\\") || /[\u0000-\u001f\u007f]/.test(value)) {
     return null;
   }
   const segments = value.split("/");
@@ -53,7 +53,7 @@ Deno.serve(async (req: Request) => {
   if (req.method !== "POST") return json(405, { error: "Method not allowed." });
 
   const authorization = req.headers.get("Authorization") ?? "";
-  const match = authorization.match(/^Bearer\\s+(.+)$/i);
+  const match = authorization.match(/^Bearer\s+(.+)$/i);
   if (!match) return json(401, { error: "You must be signed in." });
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
@@ -76,7 +76,7 @@ Deno.serve(async (req: Request) => {
 
   if (!supabaseUrl || !supabaseSecret) return json(500, { error: "Storage service is not configured." });
   if (!b2KeyId || !b2ApplicationKey) return json(503, { error: "Backblaze credentials are missing." });
-  if (/[\\r\\n]/.test(b2KeyId) || /[\\r\\n]/.test(b2ApplicationKey)) {
+  if (/[\r\n]/.test(b2KeyId) || /[\r\n]/.test(b2ApplicationKey)) {
     return json(503, { error: "Backblaze credentials contain embedded line breaks. Re-save the Supabase secrets." });
   }
 
@@ -120,7 +120,7 @@ Deno.serve(async (req: Request) => {
         fileName === ".." ||
         fileName.includes("/") ||
         fileName.includes("\\") ||
-        /[\\u0000-\\u001f\\u007f]/.test(fileName) ||
+        /[\u0000-\u001f\u007f]/.test(fileName) ||
         fileName.length > 180
       ) return json(400, { error: "The file name is invalid." });
 
@@ -215,7 +215,7 @@ Deno.serve(async (req: Request) => {
         folderName === ".." ||
         folderName.includes("/") ||
         folderName.includes("\\") ||
-        /[\\u0000-\\u001f\\u007f]/.test(folderName) ||
+        /[\u0000-\u001f\u007f]/.test(folderName) ||
         folderName.length > 100
       ) return json(400, { error: "The folder name is invalid." });
 
