@@ -18,12 +18,29 @@
             <h1 class="exhibition-title">My dashboard</h1>
         </header>
 
-        <main class="dashboard-main">
-            <section class="dashboard-content">
-                <h2>My dashboard</h2>
-                <p>Your personal workspace.</p>
-            </section>
-        </main>
+        <div class="exhibition-layout">
+
+            <aside class="exhibition-sidebar" aria-label="Dashboard sidebar">
+                <div class="sidebar-path-box">
+                    click something to show path
+                </div>
+            </aside>
+
+            <button
+                class="sidebar-resize-handle"
+                type="button"
+                aria-label="Resize sidebar"
+                aria-valuemin="180"
+                aria-valuemax="360"
+            ></button>
+
+            <main class="exhibition-main">
+                <section class="exhibition-card-screen" aria-label="Dashboard content">
+                    <div class="exhibition-card-grid"></div>
+                </section>
+            </main>
+
+        </div>
 
     </body>
 </html>
