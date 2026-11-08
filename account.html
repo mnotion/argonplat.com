@@ -49,6 +49,23 @@
             <p>account id: <code id="profile-id"></code></p>
             <p>created: <time id="profile-created"></time></p>
             <button type="button" id="logout-button">log out</button>
+            <hr>
+            <section id="danger-zone" aria-labelledby="danger-heading">
+                <h2 id="danger-heading">delete account</h2>
+                <p>Deleting your account permanently removes your Argon login and profile. This cannot be undone.</p>
+                <button type="button" id="show-delete-button">delete account permanently</button>
+                <form id="delete-form" hidden>
+                    <p><strong>Confirm your identity</strong></p>
+                    <label for="delete-password">Current password</label>
+                    <input id="delete-password" name="password" type="password" autocomplete="current-password" maxlength="128" required>
+                    <br><br>
+                    <label for="delete-confirmation">Type DELETE to confirm</label>
+                    <input id="delete-confirmation" name="confirmation" type="text" autocomplete="off" required pattern="DELETE">
+                    <br><br>
+                    <button type="submit" id="confirm-delete-button">permanently delete account</button>
+                    <button type="button" id="cancel-delete-button">cancel</button>
+                </form>
+            </section>
         </section>
         <p id="account-message" role="status" aria-live="polite"></p>
     </main>
