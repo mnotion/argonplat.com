@@ -349,3 +349,24 @@ source{
 }
 .dashboard-exhibition-link:hover { border-color: #000; }
 .dashboard-exhibition-link:focus-visible { outline: 2px solid #000; outline-offset: 3px; }
+
+
+/* Dashboard sidebar back button */
+.sidebar-back-button {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  box-sizing: border-box;
+  width: 38px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #ddd;
+  color: inherit;
+  text-decoration: none;
+  font-size: 24px;
+  line-height: 1;
+}
+.sidebar-back-button:hover { border-color: #000; }
+.sidebar-back-button:focus-visible { outline: 2px solid #000; outline-offset: 2px; }
