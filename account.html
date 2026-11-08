@@ -13,7 +13,6 @@
             <button type="button" id="signup-tab" aria-controls="signup-panel" aria-pressed="false">sign up</button>
         </nav>
     </header>
-
     <main>
         <section id="login-panel">
             <h1>log in</h1>
@@ -27,7 +26,6 @@
                 <button type="submit">log in</button>
             </form>
         </section>
-
         <section id="signup-panel" hidden>
             <h1>sign up</h1>
             <form id="signup-form">
@@ -43,7 +41,6 @@
                 <button type="submit">create account</button>
             </form>
         </section>
-
         <section id="account-panel" hidden>
             <h1>your argon account</h1>
             <p>username: <strong id="profile-username"></strong></p>
@@ -53,10 +50,9 @@
             <p>created: <time id="profile-created"></time></p>
             <button type="button" id="logout-button">log out</button>
         </section>
-
         <p id="account-message" role="status" aria-live="polite"></p>
     </main>
-
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/auth-config.js"></script>
     <script src="js/account.js" defer></script>
 </body>
