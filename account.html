@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Account · Argon</title>
+</head>
+<body>
+    <header>
+        <a href="index.html">Argon</a>
+        <nav>
+            <button type="button" id="login-tab" aria-controls="login-panel" aria-pressed="true">log in</button>
+            <button type="button" id="signup-tab" aria-controls="signup-panel" aria-pressed="false">sign up</button>
+        </nav>
+    </header>
+
+    <main>
+        <section id="login-panel">
+            <h1>log in</h1>
+            <form id="login-form">
+                <label for="login-email">email</label>
+                <input id="login-email" name="email" type="email" autocomplete="email" required>
+                <br><br>
+                <label for="login-password">Password</label>
+                <input id="login-password" name="password" type="password" autocomplete="current-password" required>
+                <br><br>
+                <button type="submit">log in</button>
+            </form>
+        </section>
+
+        <section id="signup-panel" hidden>
+            <h1>sign up</h1>
+            <form id="signup-form">
+                <label for="signup-username">username</label>
+                <input id="signup-username" name="username" type="text" autocomplete="username" minlength="3" maxlength="24" required>
+                <br><br>
+                <label for="signup-email">email</label>
+                <input id="signup-email" name="email" type="email" autocomplete="email" required>
+                <br><br>
+                <label for="signup-password">Password</label>
+                <input id="signup-password" name="password" type="password" autocomplete="new-password" minlength="8" required>
+                <br><br>
+                <button type="submit">create account</button>
+            </form>
+        </section>
+        <p id="account-message" role="status" aria-live="polite"></p>
+    </main>
+
+    <script>
+        const loginTab = document.getElementById('login-tab');
+        const signupTab = document.getElementById('signup-tab');
+        const loginPanel = document.getElementById('login-panel');
+        const signupPanel = document.getElementById('signup-panel');
+
+        loginTab.addEventListener('click', () => {
+            loginPanel.hidden = false;
+            signupPanel.hidden = true;
+            loginTab.setAttribute('aria-pressed', 'true');
+            signupTab.setAttribute('aria-pressed', 'false');
+        });
+
+        signupTab.addEventListener('click', () => {
+            loginPanel.hidden = true;
+            signupPanel.hidden = false;
+            loginTab.setAttribute('aria-pressed', 'false');
+            signupTab.setAttribute('aria-pressed', 'true');
+        });
+    </script>
+</body>
+</html>
