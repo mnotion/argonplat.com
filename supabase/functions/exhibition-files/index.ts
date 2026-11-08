@@ -1,6 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2.95.0";
 import {
-  CreateBucketCommand,
   GetObjectCommand,
   ListObjectsV2Command,
   PutObjectCommand,
@@ -177,7 +176,7 @@ Deno.serve(async (req: Request) => {
       const folders = (result.CommonPrefixes ?? [])
         .map((entry) => {
           const key = entry.Prefix ?? "";
-          const name = key.slice(prefix.length).replace(/\\/$/, "");
+          const name = key.slice(prefix.length).replaceAll("/", "");
           return name ? { name, type: "folder" } : null;
         })
         .filter(Boolean);
