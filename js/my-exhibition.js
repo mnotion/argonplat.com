@@ -328,6 +328,61 @@
     }
   });
 
+  function createProvisioningToken() {
+    const bytes = new Uint8Array(32);
+    crypto.getRandomValues(bytes);
+    return Array.from(bytes, byte => byte.toString(16).padStart(2, "0")).join("");
+  }
+
+  async function ensureStorageProvisioned(user) {
+    let metadata = user.user_metadata || {};
+    if (
+      metadata.argon_storage_provisioned === true &&
+      Number(metadata.argon_storage_schema_version) >= 2
+    ) return;
+
+    let token = metadata.argon_storage_provisioning_token;
+    if (!token) {
+      token = createProvisioningToken();
+      const { data, error } = await supabase.auth.updateUser({
+        data: { ...metadata, argon_storage_provisioning_token: token }
+      });
+      if (error || !data.user) {
+        throw new Error(error?.message || "Could not prepare your B2 storage.");
+      }
+      user = data.user;
+      metadata = user.user_metadata || {};
+      token = metadata.argon_storage_provisioning_token;
+    }
+
+    const { data, error } = await supabase.functions.invoke("provision-user-storage", {
+      body: { userId: user.id, provisioningToken: token }
+    });
+    if (error) throw new Error(await responseJsonFromFunction(error));
+    if (!data?.success) throw new Error(data?.error || "B2 storage setup did not complete.");
+
+    const { data: refreshed, error: refreshError } = await supabase.auth.getUser();
+    if (refreshError || !refreshed.user) {
+      throw new Error("Storage was created, but the account session could not be refreshed.");
+    }
+    if (
+      refreshed.user.user_metadata?.argon_storage_provisioned !== true ||
+      Number(refreshed.user.user_metadata?.argon_storage_schema_version) < 2
+    ) throw new Error("B2 storage setup is not marked complete yet.");
+  }
+
+  async function responseJsonFromFunction(error) {
+    let detail = error?.message || "B2 storage setup failed.";
+    try {
+      const response = error?.context;
+      if (response && typeof response.json === "function") {
+        const data = await response.json();
+        if (data?.error) detail = data.error;
+      }
+    } catch { /* Use the function error message. */ }
+    return detail;
+  }
+
   async function initialize() {
     setStatus("connecting…");
     const { data: { session }, error } = await supabase.auth.getSession();
@@ -337,22 +392,25 @@
     }
     accessToken = session.access_token;
 
-    const metadata = session.user.user_metadata || {};
-    if (metadata.argon_storage_provisioned !== true || Number(metadata.argon_storage_schema_version) < 2) {
-      list.replaceChildren();
-      const pending = document.createElement("p");
-      pending.className = "file-explorer-empty";
-      pending.textContent = "Your storage is not ready yet. Open your account page and sign in there to finish storage setup.";
-      const link = document.createElement("a");
-      link.href = "account.html";
-      link.textContent = "open account page";
-      pending.append(" ", link);
-      list.append(pending);
-      setStatus("storage setup pending");
+    const { data: current, error: userError } = await supabase.auth.getUser();
+    if (userError || !current.user) {
+      showSignedOut();
       return;
     }
 
-    await loadFolder("");
+    try {
+      await ensureStorageProvisioned(current.user);
+      const { data: latestSession } = await supabase.auth.getSession();
+      accessToken = latestSession.session?.access_token || accessToken;
+      await loadFolder("");
+    } catch (error) {
+      list.replaceChildren();
+      const pending = document.createElement("p");
+      pending.className = "file-explorer-empty";
+      pending.textContent = "Your account is signed in, but storage setup has not completed: " + error.message;
+      list.append(pending);
+      setStatus("storage setup pending");
+    }
   }
 
   supabase.auth.onAuthStateChange((event, session) => {
