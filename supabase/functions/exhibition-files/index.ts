@@ -87,6 +87,13 @@ Deno.serve(async (req: Request) => {
   const { data: { user }, error: authError } = await admin.auth.getUser(match[1]);
   if (authError || !user) return json(401, { error: "Your session is invalid. Log in again." });
 
+  if (
+    user.user_metadata?.argon_storage_provisioned !== true ||
+    Number(user.user_metadata?.argon_storage_schema_version) < 2
+  ) {
+    return json(409, { error: "Your B2 storage is not initialized yet. Open your account page and sign in there to finish setup." });
+  }
+
   const { data: profile, error: profileError } = await admin
     .from("profiles")
     .select("id, username")
