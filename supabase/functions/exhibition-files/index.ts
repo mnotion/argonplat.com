@@ -9,7 +9,7 @@ import { getSignedUrl } from "npm:@aws-sdk/s3-request-presigner@3.1164.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, apikey, x-client-info, content-type, x-argon-action, x-argon-folder, x-argon-file-name",
+  "Access-Control-Allow-Headers": "authorization, apikey, x-client-info, content-type, x-argon-action, x-argon-relative-path",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Content-Type": "application/json",
 };
@@ -89,7 +89,7 @@ Deno.serve(async (req: Request) => {
 
   if (
     user.user_metadata?.argon_storage_provisioned !== true ||
-    Number(user.user_metadata?.argon_storage_schema_version) < 2
+    Number(user.user_metadata?.argon_storage_schema_version) < 3
   ) {
     return json(409, { error: "Your B2 storage is not initialized yet. Open your account page and sign in there to finish setup." });
   }
@@ -105,7 +105,7 @@ Deno.serve(async (req: Request) => {
   const username = String(profile.username ?? "").trim().toLowerCase();
   if (!/^[a-z0-9_]{3,24}$/.test(username)) return json(409, { error: "Your Argon username is invalid." });
 
-  const userRoot = `argon/userdata/${user.id}_${username}/exhibitions/`;
+  const userRoot = `argon/userdata/${user.id}_${username}/content/`;
 
   const s3 = new S3Client({
     region: REGION,
@@ -118,18 +118,15 @@ Deno.serve(async (req: Request) => {
 
   try {
     if (action === "upload") {
-      const folder = cleanRelativePath(decodeHeader(req.headers.get("x-argon-folder")));
-      const fileName = decodeHeader(req.headers.get("x-argon-file-name"));
-      if (folder === null) return json(400, { error: "The target folder path is invalid." });
-      if (
-        !fileName ||
-        fileName === "." ||
-        fileName === ".." ||
-        fileName.includes("/") ||
-        fileName.includes("\\") ||
-        /[\u0000-\u001f\u007f]/.test(fileName) ||
-        fileName.length > 180
-      ) return json(400, { error: "The file name is invalid." });
+      const relativePath = cleanRelativePath(decodeHeader(req.headers.get("x-argon-relative-path")));
+      if (relativePath === null || !relativePath) {
+        return json(400, { error: "The upload path is invalid." });
+      }
+
+      const segments = relativePath.split("/");
+      if (segments.some((part) => part.length > 180)) {
+        return json(400, { error: "A path or file name is too long." });
+      }
 
       const length = Number(req.headers.get("content-length") ?? 0);
       if (length > MAX_UPLOAD_BYTES) {
@@ -140,8 +137,8 @@ Deno.serve(async (req: Request) => {
       if (bytes.byteLength > MAX_UPLOAD_BYTES) {
         return json(413, { error: "Files must be 25 MB or smaller for now." });
       }
-      const key = userRoot + (folder ? folder + "/" : "") + fileName;
 
+      const key = userRoot + relativePath;
       await s3.send(new PutObjectCommand({
         Bucket: BUCKET,
         Key: key,
@@ -154,8 +151,8 @@ Deno.serve(async (req: Request) => {
       return json(200, {
         success: true,
         item: {
-          name: fileName,
-          path: (folder ? folder + "/" : "") + fileName,
+          name: segments[segments.length - 1],
+          path: relativePath,
           size: bytes.byteLength,
         },
       });
