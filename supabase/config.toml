@@ -1,0 +1,2 @@
+[functions.provision-user-storage]
+verify_jwt = false
