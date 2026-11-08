@@ -39,6 +39,62 @@
         form.setAttribute("aria-busy", String(state));
     }
 
+    const storageProvisioning = new Map();
+
+    function createProvisioningToken() {
+        const bytes = new Uint8Array(32);
+        crypto.getRandomValues(bytes);
+        return Array.from(bytes, byte => byte.toString(16).padStart(2, "0")).join("");
+    }
+
+    async function getFunctionErrorMessage(error) {
+        let detail = error?.message || "Storage provisioning failed.";
+        try {
+            const response = error?.context;
+            if (response && typeof response.json === "function") {
+                const payload = await response.json();
+                if (payload?.error) detail = payload.error;
+            }
+        } catch { /* Keep the original function error. */ }
+        return detail;
+    }
+
+    async function ensureStorageProvisioned(user) {
+        const metadata = user?.user_metadata || {};
+        if (metadata.argon_storage_provisioned === true) return true;
+
+        const provisioningToken = metadata.argon_storage_provisioning_token;
+        if (!provisioningToken) return false;
+
+        if (storageProvisioning.has(user.id)) {
+            return storageProvisioning.get(user.id);
+        }
+
+        const task = (async () => {
+            const { data, error } = await supabase.functions.invoke("provision-user-storage", {
+                body: {
+                    userId: user.id,
+                    provisioningToken
+                }
+            });
+
+            if (error) throw new Error(await getFunctionErrorMessage(error));
+            if (!data?.success) throw new Error(data?.error || "Storage provisioning did not complete.");
+
+            // Keep the current in-memory user object in sync; the server removes the token.
+            metadata.argon_storage_provisioned = true;
+            delete metadata.argon_storage_provisioning_token;
+            return true;
+        })();
+
+        storageProvisioning.set(user.id, task);
+        try {
+            return await task;
+        } finally {
+            storageProvisioning.delete(user.id);
+        }
+    }
+
     async function loadProfile(user) {
         const { data, error } = await supabase
             .from("profiles")
@@ -63,7 +119,13 @@
         deleteForm.hidden = true;
         showDeleteButton.hidden = false;
         deleteForm.reset();
+
         setMessage("");
+        try {
+            await ensureStorageProvisioned(user);
+        } catch (error) {
+            setMessage("Your account exists, but its B2 storage setup is pending: " + error.message + " Sign in again to retry.");
+        }
     }
 
     async function showCurrentSession() {
@@ -97,21 +159,45 @@
         setMessage("Creating your Argon account…");
         const form = new FormData(signupForm);
         const username = String(form.get("username")).trim().toLowerCase();
+        const provisioningToken = createProvisioningToken();
+
         const { data, error } = await supabase.auth.signUp({
             email: form.get("email"),
             password: form.get("password"),
-            options: { data: { username } }
+            options: {
+                data: {
+                    username,
+                    argon_storage_provisioning_token: provisioningToken
+                }
+            }
         });
         busy(signupForm, false);
         if (error) { setMessage(error.message); return; }
         signupForm.reset();
 
-        if (data.session && data.user) {
-            try { await loadProfile(data.user); }
-            catch (err) { setMessage(err.message); }
+        if (!data.user) {
+            showForm("login");
+            setMessage("Signup was submitted. Check your email for confirmation.");
+            return;
+        }
+
+        if (data.session) {
+            try {
+                await loadProfile(data.user);
+                if (data.user.user_metadata?.argon_storage_provisioned) {
+                    setMessage("Your Argon account and B2 storage have been created.");
+                }
+            } catch (err) {
+                setMessage(err.message);
+            }
         } else {
             showForm("login");
-            setMessage("Account created. Check your email to confirm it, then log in.");
+            try {
+                await ensureStorageProvisioned(data.user);
+                setMessage("Account created and B2 storage initialized. Check your email to confirm your account, then log in.");
+            } catch (provisionError) {
+                setMessage("Account created, but B2 storage setup is pending: " + provisionError.message + " Confirm your email and log in to retry.");
+            }
         }
     });
 
