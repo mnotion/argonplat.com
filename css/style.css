@@ -282,3 +282,9 @@ source{
   box-shadow: -4px -6px #000, 4px -6px #000, -4px 0 #000, 4px 0 #000, -4px 6px #000, 4px 6px #000;
 }
 .sidebar-resize-handle:focus-visible { outline: 2px solid #777; }
+
+
+/* My Dashboard card is clickable as a whole */
+.dashboard-card { color: inherit; text-decoration: none; cursor: pointer; }
+.dashboard-card:hover { border-color: #000; }
+.dashboard-card:focus-visible { outline: 2px solid #000; outline-offset: 3px; }
