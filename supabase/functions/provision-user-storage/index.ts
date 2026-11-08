@@ -95,7 +95,7 @@ Deno.serve(async (req: Request) => {
   const metadata = user.user_metadata ?? {};
   if (
     metadata.argon_storage_provisioned === true &&
-    Number(metadata.argon_storage_schema_version) >= 2
+    Number(metadata.argon_storage_schema_version) >= 3
   ) {
     return json(200, { success: true, alreadyProvisioned: true });
   }
@@ -145,7 +145,7 @@ Deno.serve(async (req: Request) => {
         username,
         userdataPrefix: userPrefix,
         createdAt,
-        schemaVersion: 2,
+        schemaVersion: 3,
       }),
     },
     {
@@ -154,7 +154,7 @@ Deno.serve(async (req: Request) => {
         uid: userId,
         username,
         createdAt,
-        schemaVersion: 2,
+        schemaVersion: 3,
       }),
     },
     {
@@ -162,7 +162,17 @@ Deno.serve(async (req: Request) => {
       Body: jsonBody({
         uid: userId,
         exhibitions: [],
-        schemaVersion: 2,
+        schemaVersion: 3,
+      }),
+    },
+    {
+      Key: `${userPrefix}content/index.json`,
+      Body: jsonBody({
+        uid: userId,
+        username,
+        root: "content",
+        items: [],
+        schemaVersion: 3,
       }),
     },
   ];
@@ -189,7 +199,7 @@ Deno.serve(async (req: Request) => {
   const updatedMetadata = {
     ...metadata,
     argon_storage_provisioned: true,
-    argon_storage_schema_version: 2,
+    argon_storage_schema_version: 3,
   };
   delete updatedMetadata.argon_storage_provisioning_token;
 
