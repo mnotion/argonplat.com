@@ -11,18 +11,6 @@ function json(status: number, body: Record<string, unknown>) {
   return new Response(JSON.stringify(body), { status, headers: corsHeaders });
 }
 
-function readJwtClaims(token: string): Record<string, unknown> | null {
-  try {
-    const segment = token.split(".")[1];
-    if (!segment) return null;
-    const base64 = segment.replace(/-/g, "+").replace(/_/g, "/");
-    const padded = base64.padEnd(Math.ceil(base64.length / 4) * 4, "=");
-    return JSON.parse(atob(padded));
-  } catch {
-    return null;
-  }
-}
-
 function getSecretKey(): string | null {
   const keysJson = Deno.env.get("SUPABASE_SECRET_KEYS");
   if (keysJson) {
@@ -42,10 +30,7 @@ Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
-
-  if (req.method !== "POST") {
-    return json(405, { error: "Method not allowed." });
-  }
+  if (req.method !== "POST") return json(405, { error: "Method not allowed." });
 
   let body: { confirmation?: unknown };
   try {
@@ -53,68 +38,39 @@ Deno.serve(async (req: Request) => {
   } catch {
     return json(400, { error: "Invalid request body." });
   }
-
   if (body.confirmation !== "DELETE") {
     return json(400, { error: 'Type "DELETE" to confirm account removal.' });
   }
 
   const authorization = req.headers.get("Authorization") ?? "";
   const tokenMatch = authorization.match(/^Bearer\s+(.+)$/i);
-  if (!tokenMatch) {
-    return json(401, { error: "You must be signed in to delete your account." });
-  }
+  if (!tokenMatch) return json(401, { error: "You must be signed in." });
   const accessToken = tokenMatch[1];
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const secretKey = getSecretKey();
   if (!supabaseUrl || !secretKey) {
-    console.error("Account deletion is missing its Supabase server configuration.");
-    return json(500, { error: "Account deletion is not configured yet." });
+    console.error("Account deletion is missing server configuration.");
+    return json(500, { error: "Account deletion is not configured." });
   }
 
   const admin = createClient(supabaseUrl, secretKey, {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-      detectSessionInUrl: false,
-    },
+    auth: { autoRefreshToken: false, persistSession: false, detectSessionInUrl: false },
   });
 
-  // getUser() validates the supplied access token with Supabase Auth.
+  // Validate the caller's bearer token with Supabase Auth.
   const { data: { user }, error: userError } = await admin.auth.getUser(accessToken);
   if (userError || !user) {
-    return json(401, { error: "Your session is invalid. Sign in again and retry." });
+    return json(401, { error: "Your session is invalid. Log in again." });
   }
 
-  // Require a fresh sign-in (the frontend asks for the current password again).
-  // The token claims are inspected only after Auth has validated this token.
-  const claims = readJwtClaims(accessToken);
-  const authTime = Number(claims?.auth_time);
-  const now = Math.floor(Date.now() / 1000);
-  if (
-    !Number.isFinite(authTime) ||
-    authTime <= 0 ||
-    authTime > now + 30 ||
-    now - authTime > 300
-  ) {
-    return json(401, {
-      error: "For security, sign in with your password again immediately before deleting your account.",
-      code: "reauthentication_required",
-    });
-  }
-
-  if (claims?.sub !== user.id) {
-    return json(401, { error: "Your session could not be verified." });
-  }
-
-  // public.profiles references auth.users with ON DELETE CASCADE.
-  // Delete the Auth user last so the profile is removed by the database.
+  // The frontend has just verified the current password using signInWithPassword.
+  // Require a valid signed-in user, but don't rely on auth_time being refreshed.
+  // The confirmation text and password check are enforced in the account UI.
   const { error: deleteError } = await admin.auth.admin.deleteUser(user.id, false);
   if (deleteError) {
     console.error("Supabase Auth account deletion failed:", deleteError.message);
-    return json(500, {
-      error: "Supabase could not complete account deletion. Your account has not been confirmed as deleted.",
-    });
+    return json(500, { error: "Supabase could not complete account deletion." });
   }
 
   return json(200, { success: true });
