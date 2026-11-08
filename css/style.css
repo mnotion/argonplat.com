@@ -370,3 +370,10 @@ source{
 }
 .sidebar-back-button:hover { border-color: #000; }
 .sidebar-back-button:focus-visible { outline: 2px solid #000; outline-offset: 2px; }
+
+
+/* Exhibition lobby without sidebar */
+.exhibition-main-full {
+  width: 100%;
+  flex: 1 1 auto;
+}
