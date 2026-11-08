@@ -1,6 +1,6 @@
 import os
 import re
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Header
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, EmailStr, Field
 from supabase import create_client, Client
@@ -87,7 +87,7 @@ def login(body: LoginRequest):
     }
 
 @app.get("/auth/me")
-def me(authorization: str | None = None):
+def me(authorization: str | None = Header(default=None)):
     # The frontend sends its Supabase access token in Authorization: Bearer <token>.
     if not authorization or not authorization.lower().startswith("bearer "):
         raise HTTPException(401, "Sign in required.")
