@@ -69,7 +69,7 @@
         const task = Promise.resolve().then(async () => {
             let currentUser = user;
             let metadata = currentUser.user_metadata || {};
-            if (metadata.argon_storage_provisioned === true && Number(metadata.argon_storage_schema_version) >= 2) return true;
+            if (metadata.argon_storage_provisioned === true && Number(metadata.argon_storage_schema_version) >= 3) return true;
 
             let provisioningToken = metadata.argon_storage_provisioning_token;
             if (!provisioningToken) {
@@ -102,7 +102,7 @@
 
             // The server marks this user as provisioned and removes the one-time token.
             metadata.argon_storage_provisioned = true;
-            metadata.argon_storage_schema_version = 2;
+            metadata.argon_storage_schema_version = 3;
             delete metadata.argon_storage_provisioning_token;
             return true;
         });
