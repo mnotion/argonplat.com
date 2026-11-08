@@ -7,7 +7,59 @@ Argon's account page connects directly to Supabase using the browser-safe publis
 - Supabase Auth handles account signup, email confirmation, login, and sessions.
 - The `handle_new_user` database trigger creates the `public.profiles` row from signup username metadata.
 - The profile page queries only the signed-in user's row. PostgreSQL Row Level Security must remain enabled and the own-row policies must be in place.
-- Never put a Supabase secret/service-role key in frontend code. The publishable key is intended for browser use; RLS protects database records.
+- Never put a Supabase secret/service-role key or Backblaze B2 application key in frontend code or GitHub.
+
+## Backblaze B2 signup provisioning
+
+When a new user signs up, the frontend generates a cryptographically random, one-time provisioning token and stores it in that user's Supabase Auth metadata. It then invokes the `provision-user-storage` Edge Function. The function looks up the user and profile through Supabase Admin, verifies the one-time token, and creates these JSON objects in the private `argon-cloud-storage` bucket:
+
+```text
+argon/
+├── config/
+│   └── users/
+│       └── {uid}.json
+└── userdata/
+    └── {uid}/
+        ├── user.json
+        └── exhibitions/
+            └── index.json
+```
+
+B2 object keys are prefixes rather than physical folders. The JSON objects cause the corresponding prefixes to appear in the B2 file browser. `exhibitions/index.json` starts with an empty list; signup does not create an exhibition.
+
+The function uses the Supabase-injected `SUPABASE_SECRET_KEYS` only on the server and uses a bucket-restricted Backblaze application key to upload the JSON objects. It does not accept a UID, username, or object path as trusted ownership information from the browser. The requested UID must exist in Supabase Auth and its one-time token must match that user's Auth metadata. After all objects are uploaded, the function marks provisioning complete and removes the one-time token from user metadata.
+
+### Configure B2 secrets
+
+In Supabase Dashboard → Edge Functions → Secrets, add:
+
+| Secret name | Value |
+|---|---|
+| `B2_APPLICATION_KEY_ID` | Your bucket-restricted B2 Application Key ID |
+| `B2_APPLICATION_KEY` | Its Application Key secret |
+
+The bucket name, endpoint and region are currently configured in the function source:
+- Bucket: `argon-cloud-storage`
+- Endpoint: `https://s3.eu-central-003.backblazeb2.com`
+- Region: `eu-central-003`
+
+Create a dedicated B2 application key restricted to this bucket with `writeFiles` permission. Do not use the B2 master key. The integration only uploads objects at signup; it does not need bucket creation, deletion, or public access permissions.
+
+### Deploy the Edge Function
+
+The function source is `supabase/functions/provision-user-storage/index.ts`. Its JWT check is disabled in `supabase/config.toml` because signup email confirmation can mean there is not yet a user access token. The function instead requires a random one-time provisioning token that it verifies against the user's Auth metadata.
+
+From the repository root, link the Supabase project and deploy the function:
+
+```bash
+supabase login
+supabase link --project-ref nacwfrsdpglzrhasmit
+supabase functions deploy provision-user-storage --no-verify-jwt
+```
+
+Add the B2 secrets in the Supabase Dashboard before testing signup. New secrets are available to Edge Functions without another deployment.
+
+If B2 provisioning fails during signup, the Supabase account remains created. The one-time token stays in Auth metadata, and the next login retries storage provisioning. After successful provisioning, the token is removed.
 
 ## Account deletion
 
@@ -16,7 +68,7 @@ Argon's account page connects directly to Supabase using the browser-safe publis
 - The frontend calls `public.delete_my_account(text)` through the authenticated Supabase client.
 - The database function checks `auth.uid()`, checks the exact confirmation string, and deletes only the caller's own row from `auth.users`.
 - Execute permission is revoked from `PUBLIC` and `anon`, and granted only to `authenticated`.
-- The function runs with an empty `search_path` and uses fully qualified table names. The `public.profiles` row is removed by its existing `ON DELETE CASCADE` foreign key.
-- The account page no longer invokes the `delete-account` Edge Function. That previously deployed function is obsolete and can be removed from Supabase separately.
-- No Supabase Storage buckets or objects exist in this project at present. Argon has not connected Backblaze B2 yet, so this flow cannot remove B2 files or data held outside this Supabase project.
+- The `public.profiles` row is removed by its existing `ON DELETE CASCADE` foreign key.
+- No Supabase Storage buckets or objects exist in this project at present. Argon's B2 account data is provisioned separately using the UID-prefixed object keys above.
+- Account deletion does not yet remove B2 objects. That will need to be added to the deletion workflow before B2-backed user content is stored.
 - Account deletion does not erase email messages, provider backups, logs subject to retention, or browser/device files.
