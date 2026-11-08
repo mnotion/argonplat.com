@@ -1,50 +1,92 @@
-// entry point
+// Argon interaction entry point
 
-
-// - sidebar resizing, kept simple for pointer and keyboard input
 document.addEventListener("DOMContentLoaded", () => {
+  // Bottom dock: browser navigation history + app edit history.
+  const dock = document.querySelector(".argon-dock");
+  if (dock) {
+    const undoStack = [];
+    const redoStack = [];
+    let replaying = false;
+
+    // Future content actions can register reversible operations here:
+    // window.argonHistory.record({ undo: () => ..., redo: () => ... })
+    window.argonHistory = {
+      record(action) {
+        if (!action || typeof action.undo !== "function" || typeof action.redo !== "function") return;
+        if (replaying) return;
+        undoStack.push(action);
+        redoStack.length = 0;
+        updateButtons();
+      },
+      undo() {
+        const action = undoStack.pop();
+        if (!action) return;
+        replaying = true;
+        try { action.undo(); redoStack.push(action); } finally { replaying = false; }
+        updateButtons();
+      },
+      redo() {
+        const action = redoStack.pop();
+        if (!action) return;
+        replaying = true;
+        try { action.redo(); undoStack.push(action); } finally { replaying = false; }
+        updateButtons();
+      }
+    };
+
+    const updateButtons = () => {
+      dock.querySelector('[data-history="nav-undo"]').disabled = history.length <= 1;
+      dock.querySelector('[data-history="nav-redo"]').disabled = !history.state || !history.state.argonForward;
+      dock.querySelector('[data-history="edit-undo"]').disabled = undoStack.length === 0;
+      dock.querySelector('[data-history="edit-redo"]').disabled = redoStack.length === 0;
+    };
+
+    // Mark forward visits so the dock can reflect browser navigation availability.
+    const markVisit = () => {
+      try { history.replaceState({ ...(history.state || {}), argonForward: false }, ""); } catch (_) {}
+      updateButtons();
+    };
+    markVisit();
+    window.addEventListener("pageshow", updateButtons);
+    window.addEventListener("popstate", () => {
+      try { history.replaceState({ ...(history.state || {}), argonForward: true }, ""); } catch (_) {}
+      updateButtons();
+    });
+
+    dock.addEventListener("click", (event) => {
+      const button = event.target.closest("button[data-history]");
+      if (!button) return;
+      switch (button.dataset.history) {
+        case "nav-undo": history.back(); break;
+        case "nav-redo": history.forward(); break;
+        case "edit-undo": window.argonHistory.undo(); break;
+        case "edit-redo": window.argonHistory.redo(); break;
+      }
+    });
+    updateButtons();
+  }
+
+  // Legacy sidebar resize support (only on pages that still include one).
   const sidebar = document.querySelector(".exhibition-sidebar");
   const handle = document.querySelector(".sidebar-resize-handle");
   if (!sidebar || !handle) return;
-  const min = 0;
-  const max = 360;
   let dragging = false;
-
-
   const resize = (clientX) => {
-    const width = Math.max(min, Math.min(max, clientX - sidebar.getBoundingClientRect().left));
+    const width = Math.max(0, Math.min(360, clientX - sidebar.getBoundingClientRect().left));
     sidebar.style.flexBasis = width + "px";
     sidebar.style.width = width + "px";
   };
-  // mouse/touch grabs the handle, then browser tracks it
   handle.addEventListener("pointerdown", (event) => {
-    dragging = true;
-    handle.setPointerCapture(event.pointerId);
-    document.body.style.cursor = "col-resize";
-    document.body.style.userSelect = "none";
+    dragging = true; handle.setPointerCapture(event.pointerId);
+    document.body.style.cursor = "col-resize"; document.body.style.userSelect = "none";
   });
-  handle.addEventListener("pointermove", (event) => {
-    if (dragging) resize(event.clientX);
-  });
-
-
-
-  const stop = () => {
-    dragging = false;
-    document.body.style.cursor = "";
-    document.body.style.userSelect = "";
-  };
+  handle.addEventListener("pointermove", (event) => { if (dragging) resize(event.clientX); });
+  const stop = () => { dragging = false; document.body.style.cursor = ""; document.body.style.userSelect = ""; };
   handle.addEventListener("pointerup", stop);
-
   handle.addEventListener("pointercancel", stop);
-
-
-
-  // keyboard route is simpler: small step left/right
   handle.addEventListener("keydown", (event) => {
     const current = sidebar.getBoundingClientRect().width;
     if (event.key === "ArrowLeft") { resize(sidebar.getBoundingClientRect().left + current - 10); event.preventDefault(); }
-
     if (event.key === "ArrowRight") { resize(sidebar.getBoundingClientRect().left + current + 10); event.preventDefault(); }
   });
 });
