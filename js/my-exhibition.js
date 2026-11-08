@@ -14,7 +14,9 @@
   const breadcrumbs = document.getElementById("file-explorer-breadcrumbs");
   const dropZone = document.getElementById("file-drop-zone");
   const picker = document.getElementById("file-picker");
+  const folderPicker = document.getElementById("folder-picker");
   const uploadButton = document.getElementById("upload-files-button");
+  const uploadFolderButton = document.getElementById("upload-folder-button");
   const refreshButton = document.getElementById("refresh-files-button");
   const newFolderButton = document.getElementById("new-folder-button");
   const newFolderForm = document.getElementById("new-folder-form");
@@ -87,7 +89,7 @@
 
   function renderBreadcrumbs() {
     breadcrumbs.replaceChildren();
-    const root = makeButton("exhibitions", "", () => loadFolder(""));
+    const root = makeButton("content", "", () => loadFolder(""));
     breadcrumbs.append(root);
 
     if (!currentPath) return;
@@ -208,27 +210,90 @@
     }
   }
 
-  async function uploadFiles(fileList) {
-    const files = Array.from(fileList || []);
-    if (!files.length || busy) return;
+  function joinPath(left, right) {
+    return [left, right].filter(Boolean).join("/");
+  }
+
+  async function collectDirectoryEntry(entry, parentPath, files, directories) {
+    if (entry.isFile) {
+      const file = await new Promise((resolve, reject) => {
+        entry.file(resolve, reject);
+      });
+      files.push({
+        file,
+        relativePath: joinPath(parentPath, file.name)
+      });
+      return;
+    }
+
+    if (entry.isDirectory) {
+      const directoryPath = joinPath(parentPath, entry.name);
+      directories.add(directoryPath);
+
+      const reader = entry.createReader();
+      while (true) {
+        const batch = await new Promise((resolve, reject) => {
+          reader.readEntries(resolve, reject);
+        });
+        if (!batch.length) break;
+        for (const child of batch) {
+          await collectDirectoryEntry(child, directoryPath, files, directories);
+        }
+      }
+    }
+  }
+
+  function addParentDirectories(relativePath, directories) {
+    const parts = relativePath.split("/");
+    for (let index = 1; index < parts.length; index += 1) {
+      directories.add(parts.slice(0, index).join("/"));
+    }
+  }
+
+  async function createDirectoryMarkers(relativeDirectories, targetFolder) {
+    const ordered = Array.from(relativeDirectories).sort((a, b) => {
+      const depth = a.split("/").length - b.split("/").length;
+      return depth || a.localeCompare(b);
+    });
+
+    for (const directory of ordered) {
+      const parts = directory.split("/");
+      const name = parts.pop();
+      const parent = joinPath(targetFolder, parts.join("/"));
+      await callService("create-folder", { path: parent, name });
+    }
+  }
+
+  async function uploadItems(items, explicitDirectories = []) {
+    const uploads = items.filter((item) => item?.file instanceof File && item.relativePath);
+    if ((!uploads.length && !explicitDirectories.length) || busy) return;
+
     busy = true;
     uploadButton.disabled = true;
+    uploadFolderButton.disabled = true;
     newFolderButton.disabled = true;
     refreshButton.disabled = true;
+
     const targetFolder = currentPath;
+    const directories = new Set(explicitDirectories);
+    for (const item of uploads) addParentDirectories(item.relativePath, directories);
+
     let uploaded = 0;
     const failures = [];
 
     try {
-      for (let index = 0; index < files.length; index += 1) {
-        const file = files[index];
+      await createDirectoryMarkers(directories, targetFolder);
+
+      for (let index = 0; index < uploads.length; index += 1) {
+        const { file, relativePath } = uploads[index];
         if (file.size > 25 * 1024 * 1024) {
-          failures.push(file.name + " is larger than 25 MB.");
+          failures.push(relativePath + " is larger than 25 MB.");
           continue;
         }
 
-        setStatus("syncing " + (index + 1) + " of " + files.length + "…");
-        setMessage("Uploading " + file.name + "…");
+        const targetPath = joinPath(targetFolder, relativePath);
+        setStatus("syncing " + (index + 1) + " of " + uploads.length + "…");
+        setMessage("Uploading " + targetPath + "…");
 
         const response = await fetch(endpoint, {
           method: "POST",
@@ -237,8 +302,7 @@
             "apikey": window.ARGON_SUPABASE_PUBLISHABLE_KEY,
             "Content-Type": file.type || "application/octet-stream",
             "x-argon-action": "upload",
-            "x-argon-folder": encodeURIComponent(targetFolder),
-            "x-argon-file-name": encodeURIComponent(file.name)
+            "x-argon-relative-path": encodeURIComponent(targetPath)
           },
           body: file
         });
@@ -250,7 +314,11 @@
       if (failures.length) {
         setMessage((uploaded ? uploaded + " file(s) synced. " : "") + failures.join(" "));
       } else {
-        setMessage(uploaded ? uploaded + " file(s) automatically synced to Backblaze." : "");
+        const folderCount = directories.size;
+        const summary = [];
+        if (uploaded) summary.push(uploaded + " file(s) synced");
+        if (folderCount) summary.push(folderCount + " folder(s) created");
+        setMessage(summary.length ? summary.join(" · ") + " to Backblaze." : "");
       }
     } catch (error) {
       setStatus("sync failed");
@@ -259,14 +327,57 @@
     } finally {
       busy = false;
       uploadButton.disabled = false;
+      uploadFolderButton.disabled = false;
       newFolderButton.disabled = false;
       refreshButton.disabled = false;
       picker.value = "";
+      folderPicker.value = "";
     }
   }
 
+  function filesFromPicker(fileList) {
+    return Array.from(fileList || []).map((file) => ({
+      file,
+      relativePath: file.webkitRelativePath || file.name
+    }));
+  }
+
+  async function filesFromDrop(dataTransfer) {
+    const files = [];
+    const directories = new Set();
+    const items = Array.from(dataTransfer?.items || []);
+
+    for (const item of items) {
+      if (item.kind !== "file") continue;
+      const entry = typeof item.webkitGetAsEntry === "function" ? item.webkitGetAsEntry() : null;
+      if (entry) {
+        await collectDirectoryEntry(entry, "", files, directories);
+      } else {
+        const file = item.getAsFile();
+        if (file) {
+          files.push({
+            file,
+            relativePath: file.webkitRelativePath || file.name
+          });
+        }
+      }
+    }
+
+    if (!items.length) {
+      for (const file of Array.from(dataTransfer?.files || [])) {
+        files.push({
+          file,
+          relativePath: file.webkitRelativePath || file.name
+        });
+      }
+    }
+    return { files, directories: Array.from(directories) };
+  }
+
   uploadButton.addEventListener("click", () => picker.click());
-  picker.addEventListener("change", () => uploadFiles(picker.files));
+  picker.addEventListener("change", () => uploadItems(filesFromPicker(picker.files)));
+  uploadFolderButton.addEventListener("click", () => folderPicker.click());
+  folderPicker.addEventListener("change", () => uploadItems(filesFromPicker(folderPicker.files)));
   refreshButton.addEventListener("click", () => loadFolder(currentPath));
 
   newFolderButton.addEventListener("click", () => {
@@ -316,10 +427,16 @@
       dropZone.classList.remove("is-dragging");
     }
   });
-  dropZone.addEventListener("drop", (event) => {
+  dropZone.addEventListener("drop", async (event) => {
     event.preventDefault();
     dropZone.classList.remove("is-dragging");
-    uploadFiles(event.dataTransfer?.files);
+    try {
+      const result = await filesFromDrop(event.dataTransfer);
+      await uploadItems(result.files, result.directories);
+    } catch (error) {
+      setStatus("sync failed");
+      setMessage("Could not read the dropped folder: " + error.message);
+    }
   });
   dropZone.addEventListener("keydown", (event) => {
     if ((event.key === "Enter" || event.key === " ") && event.target === dropZone) {
