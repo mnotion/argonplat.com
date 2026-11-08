@@ -194,11 +194,15 @@ def me(authorization: str | None = Header(default=None)):
 
     try:
         user = client.auth.get_user(token).user
-        if not user:
-            raise HTTPException(401, "Session is invalid or expired.")
+    except Exception:
+        raise HTTPException(401, "Session is invalid or expired.")
 
-        # Attach this user's JWT to PostgREST. The profiles table's RLS
-        # policy then limits the result to auth.uid() = profiles.id.
+    if not user:
+        raise HTTPException(401, "Session is invalid or expired.")
+
+    # Attach this user's JWT to PostgREST. The profiles table's RLS
+    # policy then limits the result to auth.uid() = profiles.id.
+    try:
         profile_result = (
             client.postgrest.auth(token)
             .from_("profiles")
@@ -207,10 +211,8 @@ def me(authorization: str | None = Header(default=None)):
             .maybe_single()
             .execute()
         )
-    except HTTPException:
-        raise
     except Exception:
-        raise HTTPException(401, "Session is invalid or expired.")
+        raise HTTPException(503, "Could not load your Argon profile.")
 
     profile = profile_result.data
     if not profile:
