@@ -1,7 +1,17 @@
+# Local secrets and credentials
 .env
 .env.*
 !.env.example
+!supabase/.env.test.example
 auth/.env
+supabase/functions/.env
+supabase/.env.test
+js/auth-config.local.js
+
+# Local runtimes and generated files
+/node_modules/
+supabase/.branches/
+supabase/.temp/
 .venv/
 venv/
 __pycache__/

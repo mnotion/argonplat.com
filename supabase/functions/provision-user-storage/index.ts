@@ -1,5 +1,6 @@
 import { createClient } from "npm:@supabase/supabase-js@2.95.0";
 import { PutObjectCommand, S3Client } from "npm:@aws-sdk/client-s3@3.1164.0";
+import { readB2Settings } from "../_shared/b2-config.mjs";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -72,7 +73,13 @@ Deno.serve(async (req: Request) => {
     console.error("Provisioning is missing its Backblaze B2 application key secrets.");
     return json(503, { error: "Backblaze storage credentials have not been configured yet." });
   }
-  if (/[\\r\\n]/.test(b2KeyId) || /[\\r\\n]/.test(b2ApplicationKey)) {
+  let b2Settings: ReturnType<typeof readB2Settings>;
+  try {
+    b2Settings = readB2Settings(supabaseUrl, (name) => Deno.env.get(name));
+  } catch (error) {
+    return json(503, { error: error instanceof Error ? error.message : "B2 storage configuration is invalid." });
+  }
+  if (/[\r\n]/.test(b2KeyId) || /[\r\n]/.test(b2ApplicationKey)) {
     console.error("Backblaze credentials contain embedded line breaks.");
     return json(503, { error: "The Backblaze credentials contain line breaks. Re-save the two Supabase secrets without extra lines." });
   }
@@ -95,7 +102,7 @@ Deno.serve(async (req: Request) => {
   const metadata = user.user_metadata ?? {};
   if (
     metadata.argon_storage_provisioned === true &&
-    Number(metadata.argon_storage_schema_version) >= 2
+    Number(metadata.argon_storage_schema_version) >= 4
   ) {
     return json(200, { success: true, alreadyProvisioned: true });
   }
@@ -119,17 +126,14 @@ Deno.serve(async (req: Request) => {
     return json(409, { error: "The Argon username is not valid for storage provisioning." });
   }
 
-  const bucket = "argon-cloud-storage";
-  const region = "eu-central-003";
-  const endpoint = "https://s3.eu-central-003.backblazeb2.com";
   // UID is the immutable account identity; username is included as a readable label.
   const userStorageName = `${userId}_${username}`;
   const userPrefix = `argon/userdata/${userStorageName}/`;
   const createdAt = profile.created_at ?? user.created_at;
 
   const s3 = new S3Client({
-    region,
-    endpoint,
+    region: b2Settings.region,
+    endpoint: b2Settings.endpoint,
     forcePathStyle: true,
     credentials: {
       accessKeyId: b2KeyId,
@@ -144,8 +148,9 @@ Deno.serve(async (req: Request) => {
         uid: userId,
         username,
         userdataPrefix: userPrefix,
+        exhibitionsPrefix: `${userPrefix}exhibitions/`,
         createdAt,
-        schemaVersion: 2,
+        schemaVersion: 4,
       }),
     },
     {
@@ -153,8 +158,9 @@ Deno.serve(async (req: Request) => {
       Body: jsonBody({
         uid: userId,
         username,
+        exhibitionsPrefix: `${userPrefix}exhibitions/`,
         createdAt,
-        schemaVersion: 2,
+        schemaVersion: 4,
       }),
     },
     {
@@ -162,7 +168,7 @@ Deno.serve(async (req: Request) => {
       Body: jsonBody({
         uid: userId,
         exhibitions: [],
-        schemaVersion: 2,
+        schemaVersion: 4,
       }),
     },
   ];
@@ -170,7 +176,7 @@ Deno.serve(async (req: Request) => {
   try {
     for (const object of objects) {
       await s3.send(new PutObjectCommand({
-        Bucket: bucket,
+        Bucket: b2Settings.bucket,
         Key: object.Key,
         Body: object.Body,
         ContentType: "application/json; charset=utf-8",
@@ -184,12 +190,12 @@ Deno.serve(async (req: Request) => {
     });
   }
 
-  // Mark complete only after all three objects have been uploaded.
+  // Mark complete only after all exhibition storage objects have been uploaded.
   // Keep other user metadata intact and remove the one-time provisioning token.
   const updatedMetadata = {
     ...metadata,
     argon_storage_provisioned: true,
-    argon_storage_schema_version: 2,
+    argon_storage_schema_version: 4,
   };
   delete updatedMetadata.argon_storage_provisioning_token;
 

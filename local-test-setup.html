@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Local test connection — Argon</title>
+  <style>
+    body { max-width: 680px; margin: 48px auto; padding: 0 20px; color: #111; font: 16px/1.5 Arial, sans-serif; }
+    label { display: block; margin-top: 18px; }
+    input { box-sizing: border-box; width: 100%; margin-top: 5px; padding: 10px; font: inherit; }
+    button { margin-top: 18px; padding: 10px 16px; font: inherit; }
+    #result { margin-top: 18px; }
+    .note { padding: 12px; background: #f2f2f2; }
+  </style>
+</head>
+<body>
+  <h1>Local test connection</h1>
+  <p class="note">This page only accepts a Supabase address on this computer. It stores the local publishable key in this browser’s local storage. It does not send the key anywhere.</p>
+  <form id="local-config-form">
+    <label for="supabase-url">Local Supabase URL</label>
+    <input id="supabase-url" type="url" value="http://127.0.0.1:54321" required>
+    <label for="publishable-key">Local publishable key</label>
+    <input id="publishable-key" type="password" autocomplete="off" required>
+    <button type="submit">save local test settings</button>
+  </form>
+  <p id="result" role="status" aria-live="polite"></p>
+  <p><a href="my-exhibition.html">open My Exhibition</a></p>
+  <script>
+    "use strict";
+    const loopbackHosts = new Set(["localhost", "127.0.0.1", "::1"]);
+    if (!loopbackHosts.has(window.location.hostname)) {
+      document.body.innerHTML = "<h1>Local-only page</h1><p>Open this page from the local Argon server on this computer.</p>";
+    } else {
+      const saved = JSON.parse(localStorage.getItem("argon-local-supabase-config") || "null");
+      if (saved) {
+        document.getElementById("supabase-url").value = saved.url || "http://127.0.0.1:54321";
+        document.getElementById("publishable-key").value = saved.publishableKey || "";
+      }
+      document.getElementById("local-config-form").addEventListener("submit", (event) => {
+        event.preventDefault();
+        const urlField = document.getElementById("supabase-url");
+        const keyField = document.getElementById("publishable-key");
+        const result = document.getElementById("result");
+        let parsed;
+        try { parsed = new URL(urlField.value); }
+        catch { result.textContent = "Enter a valid local Supabase URL."; return; }
+        if (parsed.protocol !== "http:" || !loopbackHosts.has(parsed.hostname)) {
+          result.textContent = "For safety, the URL must use http and point to localhost or 127.0.0.1.";
+          return;
+        }
+        if (!keyField.value.trim()) {
+          result.textContent = "Paste the publishable key printed by the local Supabase setup.";
+          return;
+        }
+        localStorage.setItem("argon-local-supabase-config", JSON.stringify({
+          url: parsed.origin,
+          publishableKey: keyField.value.trim()
+        }));
+        result.textContent = "Local settings saved. Open My Exhibition to use the local test service.";
+      });
+    }
+  </script>
+</body>
+</html>

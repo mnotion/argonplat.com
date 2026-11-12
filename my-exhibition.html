@@ -17,16 +17,32 @@
   <div class="exhibition-tools"><span id="exhibition-sync-status" role="status" aria-live="polite">connecting…</span></div>
 </header>
 <main class="my-exhibition-main">
-  <section class="file-explorer" aria-label="My exhibition files">
+  <section id="exhibitions-catalog" class="exhibitions-catalog" aria-label="Your exhibitions">
+    <p id="exhibition-count" class="exhibition-count" role="status" aria-live="polite">Loading your exhibitions…</p>
+    <p id="exhibitions-empty" class="file-explorer-empty" hidden>0 exhibitions made. Create a new exhibition to begin!</p>
+    <div id="exhibition-cards" class="exhibition-cards" role="list"></div>
+    <form id="create-exhibition-form" class="create-exhibition-form">
+      <label for="create-exhibition-name">exhibition name</label>
+      <input id="create-exhibition-name" name="name" type="text" maxlength="100" autocomplete="off" required>
+      <label for="create-exhibition-color">colour</label>
+      <input id="create-exhibition-color" name="color" type="color" value="#d8d8d8">
+      <button id="create-exhibition-button" type="submit">create exhibition</button>
+    </form>
+    <p id="exhibitions-message" class="file-explorer-message" role="status" aria-live="polite"></p>
+  </section>
+
+  <section id="file-explorer" class="file-explorer" aria-label="My exhibition files" hidden>
     <div class="file-explorer-toolbar">
       <nav id="file-explorer-breadcrumbs" class="file-explorer-breadcrumbs" aria-label="Current folder">
-        <button type="button" data-path="">exhibitions</button>
+        <button type="button" data-path="">content</button>
       </nav>
       <div class="file-explorer-actions">
+        <button type="button" id="back-to-exhibitions-button">all exhibitions</button>
         <button type="button" id="new-folder-button">new folder</button>
-        <button type="button" id="upload-files-button">add files</button>
+        <button type="button" id="upload-folder-button">add folder</button>
         <button type="button" id="refresh-files-button">refresh</button>
         <input id="file-picker" type="file" multiple hidden>
+        <input id="folder-picker" type="file" webkitdirectory directory multiple hidden>
       </div>
     </div>
 
@@ -39,8 +55,9 @@
 
     <div id="file-drop-zone" class="file-drop-zone" tabindex="0">
       <div class="file-drop-message">
-        <strong>drop files here</strong>
-        <span>or select “add files” to upload to this folder</span>
+        <strong>drop files or folders here</strong>
+        <span>drop files here, or select “add folder” to upload a folder</span>
+        <span>press Enter while this area is focused to choose files</span>
         <span class="file-drop-limit">up to 25 MB per file</span>
       </div>
       <div id="file-explorer-list" class="file-explorer-list" role="list" aria-live="polite">
@@ -50,12 +67,9 @@
     <p id="file-explorer-message" class="file-explorer-message" role="status" aria-live="polite"></p>
   </section>
 </main>
-<footer class="argon-dock" aria-label="History controls">
+<footer class="argon-dock" aria-label="Page navigation">
   <button type="button" data-history="nav-undo" disabled>↶ <span>Back</span></button>
   <button type="button" data-history="nav-redo" disabled>↷ <span>Forward</span></button>
-  <span class="dock-separator"></span>
-  <button type="button" data-history="edit-undo" disabled>↶ <span>Undo edit</span></button>
-  <button type="button" data-history="edit-redo" disabled>↷ <span>Redo edit</span></button>
 </footer>
 </body>
 </html>

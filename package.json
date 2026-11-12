@@ -1,0 +1,11 @@
+{
+  "name": "argonplat.com",
+  "private": true,
+  "scripts": {
+    "test": "node --test tests/auth/auth-config.test.cjs tests/auth/local-auth.test.mjs tests/unit/b2-config.test.mjs",
+    "test:auth": "node --test tests/auth/auth-config.test.cjs tests/auth/local-auth.test.mjs"
+  },
+  "devDependencies": {
+    "supabase": "^3.0.0"
+  }
+}

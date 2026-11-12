@@ -1,46 +1,37 @@
 // Argon interaction entry point
 
 document.addEventListener("DOMContentLoaded", () => {
-  // Bottom dock: browser navigation history + app edit history.
-  const dock = document.querySelector(".argon-dock");
-  if (dock) {
-    const undoStack = [];
-    const redoStack = [];
-    let replaying = false;
-
-    // Future content actions can register reversible operations here:
-    // window.argonHistory.record({ undo: () => ..., redo: () => ... })
-    window.argonHistory = {
-      record(action) {
-        if (!action || typeof action.undo !== "function" || typeof action.redo !== "function") return;
-        if (replaying) return;
-        undoStack.push(action);
-        redoStack.length = 0;
-        updateButtons();
-      },
-      undo() {
-        const action = undoStack.pop();
-        if (!action) return;
-        replaying = true;
-        try { action.undo(); redoStack.push(action); } finally { replaying = false; }
-        updateButtons();
-      },
-      redo() {
-        const action = redoStack.pop();
-        if (!action) return;
-        replaying = true;
-        try { action.redo(); undoStack.push(action); } finally { replaying = false; }
-        updateButtons();
-      }
+  const exhibitionLink = document.querySelector(".dashboard-exhibition-link");
+  if (exhibitionLink && window.supabase && window.ARGON_SUPABASE_URL && window.ARGON_SUPABASE_PUBLISHABLE_KEY) {
+    const authClient = window.supabase.createClient(
+      window.ARGON_SUPABASE_URL,
+      window.ARGON_SUPABASE_PUBLISHABLE_KEY
+    );
+    const setExhibitionAccess = (enabled) => {
+      exhibitionLink.classList.toggle("is-locked", !enabled);
+      exhibitionLink.href = enabled ? "my-exhibition.html" : "account.html";
+      exhibitionLink.setAttribute("aria-label", enabled ? "My exhibition" : "Sign in to open My exhibition");
+      exhibitionLink.title = enabled ? "" : "Sign in to open and store your resources.";
     };
 
+    authClient.auth.getSession().then(({ data, error }) => {
+      setExhibitionAccess(!error && Boolean(data.session?.user));
+    }).catch(() => setExhibitionAccess(false));
+    authClient.auth.onAuthStateChange((_event, session) => {
+      setExhibitionAccess(Boolean(session?.user));
+    });
+  }
+
+  // Bottom dock: browser navigation history.
+  const dock = document.querySelector(".argon-dock");
+  if (dock) {
     const updateButtons = () => {
       // Native browser history does not expose a reliable forward-stack length.
       // Keep navigation controls enabled; history.back()/forward() safely no-op at limits.
-      dock.querySelector('[data-history="nav-undo"]').disabled = false;
-      dock.querySelector('[data-history="nav-redo"]').disabled = false;
-      dock.querySelector('[data-history="edit-undo"]').disabled = undoStack.length === 0;
-      dock.querySelector('[data-history="edit-redo"]').disabled = redoStack.length === 0;
+      const backButton = dock.querySelector('[data-history="nav-undo"]');
+      const forwardButton = dock.querySelector('[data-history="nav-redo"]');
+      if (backButton) backButton.disabled = false;
+      if (forwardButton) forwardButton.disabled = false;
     };
 
     window.addEventListener("pageshow", updateButtons);
@@ -52,8 +43,6 @@ document.addEventListener("DOMContentLoaded", () => {
       switch (button.dataset.history) {
         case "nav-undo": history.back(); break;
         case "nav-redo": history.forward(); break;
-        case "edit-undo": window.argonHistory.undo(); break;
-        case "edit-redo": window.argonHistory.redo(); break;
       }
     });
     updateButtons();

@@ -347,7 +347,8 @@ source{
   text-decoration: none;
   cursor: pointer;
 }
-.dashboard-exhibition-link:hover { border-color: #000; }
+.dashboard-exhibition-link:hover:not(.is-locked) { border-color: #000; }
+.dashboard-exhibition-link.is-locked { opacity: .45; cursor: not-allowed; }
 .dashboard-exhibition-link:focus-visible { outline: 2px solid #000; outline-offset: 3px; }
 
 
@@ -412,7 +413,6 @@ source{
 .argon-dock button:hover:not(:disabled) { border-color: #111; }
 .argon-dock button:disabled { opacity: .35; cursor: default; }
 .argon-dock button span { font-size: 13px; }
-.dock-separator { width: 1px; height: 26px; background: #ddd; margin: 0 3px; }
 @media (max-width: 520px) {
   .argon-dock { width: calc(100% - 24px); box-sizing: border-box; justify-content: center; gap: 5px; padding: 8px; }
   .argon-dock button { padding: 6px 7px; }
@@ -447,6 +447,144 @@ source{
   padding: 38px 48px 100px;
 }
 
+.exhibitions-catalog {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 1180px;
+  min-height: 360px;
+  margin: 0 auto;
+  padding: 22px;
+  border: 1px solid #d8d8d8;
+  background: #fff;
+}
+
+#exhibitions-catalog[hidden],
+#file-explorer[hidden] {
+  display: none;
+}
+
+.exhibitions-catalog.is-locked {
+  opacity: .55;
+}
+
+.exhibition-count {
+  margin: 0 0 18px;
+  color: #666;
+  font-size: 14px;
+}
+
+.exhibition-cards {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 14px;
+}
+
+.exhibition-card,
+.add-exhibition-card {
+  box-sizing: border-box;
+  min-width: 190px;
+  min-height: 130px;
+  padding: 18px;
+  border: 1px solid #d8d8d8;
+  color: #111;
+  font: inherit;
+  text-align: left;
+}
+
+.exhibition-card {
+  cursor: pointer;
+}
+
+.exhibition-card-item {
+  display: grid;
+  gap: 8px;
+}
+
+.exhibition-card-controls {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.exhibition-card-controls button {
+  padding: 6px 10px;
+}
+
+.exhibition-card-controls input[type="color"] {
+  width: 34px;
+  height: 30px;
+  padding: 2px;
+  border: 1px solid #bcbcbc;
+  background: #fff;
+  cursor: pointer;
+}
+
+.exhibition-card:hover:not(:disabled),
+.add-exhibition-card:hover:not(:disabled) {
+  border-color: #111;
+}
+
+.exhibition-card-title {
+  display: block;
+  font-size: 20px;
+}
+
+.add-exhibition-card {
+  min-width: 130px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.add-exhibition-card:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+}
+
+.add-exhibition-symbol {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 28px;
+}
+
+.create-exhibition-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 9px;
+  margin-top: 24px;
+}
+
+.create-exhibition-form input[type="text"] {
+  min-width: 180px;
+  padding: 7px 9px;
+  border: 1px solid #ccc;
+  font: inherit;
+}
+
+.create-exhibition-form input[type="color"] {
+  width: 42px;
+  height: 36px;
+  padding: 2px;
+  border: 1px solid #ccc;
+  background: #fff;
+}
+
+.create-exhibition-form button {
+  border: 1px solid #d5d5d5;
+  padding: 7px 11px;
+  background: #fff;
+  color: #111;
+  font: inherit;
+  cursor: pointer;
+}
+
+.create-exhibition-form button:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+}
+
 .file-explorer {
   box-sizing: border-box;
   width: 100%;
@@ -457,6 +595,17 @@ source{
   background: #fff;
   display: flex;
   flex-direction: column;
+}
+
+.file-explorer.is-locked .file-explorer-toolbar,
+.file-explorer.is-locked .file-drop-zone {
+  opacity: .5;
+}
+
+.file-explorer.is-locked .file-explorer-actions,
+.file-explorer.is-locked .file-explorer-breadcrumbs,
+.file-explorer.is-locked .file-drop-zone {
+  cursor: not-allowed;
 }
 
 .file-explorer-toolbar {
@@ -691,6 +840,10 @@ source{
 @media (max-width: 700px) {
   .my-exhibition-main {
     padding: 18px 12px 90px;
+  }
+
+  .exhibitions-catalog {
+    padding: 16px 12px;
   }
 
   .file-explorer {

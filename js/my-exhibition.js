@@ -11,19 +11,55 @@
   const status = document.getElementById("exhibition-sync-status");
   const message = document.getElementById("file-explorer-message");
   const list = document.getElementById("file-explorer-list");
+  const exhibitionCatalog = document.getElementById("exhibitions-catalog");
+  const exhibitionCount = document.getElementById("exhibition-count");
+  const exhibitionEmpty = document.getElementById("exhibitions-empty");
+  const exhibitionCards = document.getElementById("exhibition-cards");
+  const exhibitionForm = document.getElementById("create-exhibition-form");
+  const exhibitionNameInput = document.getElementById("create-exhibition-name");
+  const exhibitionColorInput = document.getElementById("create-exhibition-color");
+  const createExhibitionButton = document.getElementById("create-exhibition-button");
+  const exhibitionCatalogMessage = document.getElementById("exhibitions-message");
   const breadcrumbs = document.getElementById("file-explorer-breadcrumbs");
   const dropZone = document.getElementById("file-drop-zone");
   const picker = document.getElementById("file-picker");
-  const uploadButton = document.getElementById("upload-files-button");
+  const folderPicker = document.getElementById("folder-picker");
+  const uploadFolderButton = document.getElementById("upload-folder-button");
   const refreshButton = document.getElementById("refresh-files-button");
   const newFolderButton = document.getElementById("new-folder-button");
   const newFolderForm = document.getElementById("new-folder-form");
   const newFolderName = document.getElementById("new-folder-name");
   const cancelNewFolder = document.getElementById("cancel-new-folder");
+  const backToExhibitionsButton = document.getElementById("back-to-exhibitions-button");
+  const fileExplorer = document.querySelector(".file-explorer");
+  const fileExplorerActions = document.querySelector(".file-explorer-actions");
 
   let accessToken = null;
   let currentPath = "";
+  let currentExhibitionId = null;
+  let currentExhibitionTitle = "";
   let busy = false;
+  let controlsLocked = true;
+
+  function setControlsLocked(locked) {
+    controlsLocked = locked;
+    fileExplorer.classList.toggle("is-locked", locked);
+    fileExplorer.setAttribute("aria-disabled", String(locked));
+    exhibitionCatalog.classList.toggle("is-locked", locked);
+    exhibitionCatalog.setAttribute("aria-disabled", String(locked));
+
+    [createExhibitionButton, exhibitionNameInput, exhibitionColorInput, backToExhibitionsButton,
+      uploadFolderButton, refreshButton, newFolderButton, picker, folderPicker, newFolderName, cancelNewFolder]
+      .forEach((control) => { control.disabled = locked; });
+    newFolderForm.querySelectorAll('button[type="submit"]').forEach((control) => { control.disabled = locked; });
+    breadcrumbs.querySelectorAll("button").forEach((control) => { control.disabled = locked; });
+    dropZone.setAttribute("aria-disabled", String(locked));
+
+    const hint = locked ? "Sign in to open and store your resources." : "";
+    [fileExplorerActions, breadcrumbs, dropZone, exhibitionCatalog].forEach((element) => {
+      element.title = hint;
+    });
+  }
 
   function setStatus(value) {
     status.textContent = value;
@@ -37,6 +73,17 @@
   }
 
   function showSignedOut() {
+    setControlsLocked(true);
+    exhibitionCatalog.hidden = false;
+    fileExplorer.hidden = true;
+    exhibitionCount.textContent = "Sign in to open your exhibitions.";
+    exhibitionEmpty.hidden = true;
+    exhibitionCards.replaceChildren();
+    exhibitionCatalogMessage.replaceChildren();
+    const loginLink = document.createElement("a");
+    loginLink.href = "account.html";
+    loginLink.textContent = "open your Argon account";
+    exhibitionCatalogMessage.append(loginLink);
     list.replaceChildren();
     const text = document.createElement("p");
     text.className = "file-explorer-empty";
@@ -87,7 +134,7 @@
 
   function renderBreadcrumbs() {
     breadcrumbs.replaceChildren();
-    const root = makeButton("exhibitions", "", () => loadFolder(""));
+    const root = makeButton(currentExhibitionTitle || "exhibition", "", () => loadFolder(""));
     breadcrumbs.append(root);
 
     if (!currentPath) return;
@@ -107,6 +154,7 @@
       }
       breadcrumbs.append(button);
     });
+    if (controlsLocked) breadcrumbs.querySelectorAll("button").forEach((button) => { button.disabled = true; });
   }
 
   function formatSize(bytes) {
@@ -151,6 +199,7 @@
   }
 
   async function loadFolder(path) {
+    if (!currentExhibitionId) return false;
     currentPath = path;
     renderBreadcrumbs();
     list.replaceChildren();
@@ -162,7 +211,10 @@
     setMessage("");
 
     try {
-      const result = await callService("list", { path: currentPath });
+      const result = await callService("list", {
+        exhibitionId: currentExhibitionId,
+        path: currentPath
+      });
       list.replaceChildren();
       const entries = [...result.folders, ...result.files];
       entries.sort((a, b) => {
@@ -186,6 +238,7 @@
         list.append(note);
       }
       setStatus("all changes synced");
+      return true;
     } catch (error) {
       list.replaceChildren();
       const failed = document.createElement("p");
@@ -193,13 +246,17 @@
       failed.textContent = "Could not load this folder: " + error.message;
       list.append(failed);
       setStatus("sync failed");
+      return false;
     }
   }
 
   async function downloadFile(path) {
     try {
       setStatus("preparing download…");
-      const result = await callService("download-url", { file: path });
+      const result = await callService("download-url", {
+        exhibitionId: currentExhibitionId,
+        file: path
+      });
       window.location.assign(result.url);
       setStatus("all changes synced");
     } catch (error) {
@@ -208,27 +265,93 @@
     }
   }
 
-  async function uploadFiles(fileList) {
-    const files = Array.from(fileList || []);
-    if (!files.length || busy) return;
+  function joinPath(left, right) {
+    return [left, right].filter(Boolean).join("/");
+  }
+
+  async function collectDirectoryEntry(entry, parentPath, files, directories) {
+    if (entry.isFile) {
+      const file = await new Promise((resolve, reject) => {
+        entry.file(resolve, reject);
+      });
+      files.push({
+        file,
+        relativePath: joinPath(parentPath, file.name)
+      });
+      return;
+    }
+
+    if (entry.isDirectory) {
+      const directoryPath = joinPath(parentPath, entry.name);
+      directories.add(directoryPath);
+
+      const reader = entry.createReader();
+      while (true) {
+        const batch = await new Promise((resolve, reject) => {
+          reader.readEntries(resolve, reject);
+        });
+        if (!batch.length) break;
+        for (const child of batch) {
+          await collectDirectoryEntry(child, directoryPath, files, directories);
+        }
+      }
+    }
+  }
+
+  function addParentDirectories(relativePath, directories) {
+    const parts = relativePath.split("/");
+    for (let index = 1; index < parts.length; index += 1) {
+      directories.add(parts.slice(0, index).join("/"));
+    }
+  }
+
+  async function createDirectoryMarkers(relativeDirectories, targetFolder) {
+    const ordered = Array.from(relativeDirectories).sort((a, b) => {
+      const depth = a.split("/").length - b.split("/").length;
+      return depth || a.localeCompare(b);
+    });
+
+    for (const directory of ordered) {
+      const parts = directory.split("/");
+      const name = parts.pop();
+      const parent = joinPath(targetFolder, parts.join("/"));
+      await callService("create-folder", {
+        exhibitionId: currentExhibitionId,
+        path: parent,
+        name
+      });
+    }
+  }
+
+  async function uploadItems(items, explicitDirectories = []) {
+    const uploads = items.filter((item) => item?.file instanceof File && item.relativePath);
+    if ((!uploads.length && !explicitDirectories.length) || busy) return;
+
     busy = true;
-    uploadButton.disabled = true;
+    uploadFolderButton.disabled = true;
     newFolderButton.disabled = true;
     refreshButton.disabled = true;
+
     const targetFolder = currentPath;
+    const directories = new Set(explicitDirectories);
+    for (const item of uploads) addParentDirectories(item.relativePath, directories);
+
     let uploaded = 0;
     const failures = [];
 
     try {
-      for (let index = 0; index < files.length; index += 1) {
-        const file = files[index];
+      await createDirectoryMarkers(directories, targetFolder);
+
+      for (let index = 0; index < uploads.length; index += 1) {
+        const { file, relativePath } = uploads[index];
         if (file.size > 25 * 1024 * 1024) {
-          failures.push(file.name + " is larger than 25 MB.");
+          failures.push(relativePath + " is larger than 25 MB.");
           continue;
         }
 
-        setStatus("syncing " + (index + 1) + " of " + files.length + "…");
-        setMessage("Uploading " + file.name + "…");
+        const targetPath = joinPath(targetFolder, relativePath);
+        setStatus("syncing " + (index + 1) + " of " + uploads.length + "…");
+        setMessage("Uploading " + targetPath + "…");
 
         const response = await fetch(endpoint, {
           method: "POST",
@@ -237,8 +360,8 @@
             "apikey": window.ARGON_SUPABASE_PUBLISHABLE_KEY,
             "Content-Type": file.type || "application/octet-stream",
             "x-argon-action": "upload",
-            "x-argon-folder": encodeURIComponent(targetFolder),
-            "x-argon-file-name": encodeURIComponent(file.name)
+            "x-argon-relative-path": encodeURIComponent(targetPath),
+            "x-argon-exhibition-id": encodeURIComponent(currentExhibitionId)
           },
           body: file
         });
@@ -246,27 +369,196 @@
         uploaded += 1;
       }
 
-      await loadFolder(targetFolder);
+      const refreshed = await loadFolder(targetFolder);
+      if (!refreshed) {
+        setStatus("refresh failed");
+        setMessage("The upload finished, but this folder could not be refreshed. Use refresh to check its contents.");
+        return;
+      }
       if (failures.length) {
+        setStatus("sync failed");
         setMessage((uploaded ? uploaded + " file(s) synced. " : "") + failures.join(" "));
       } else {
-        setMessage(uploaded ? uploaded + " file(s) automatically synced to Backblaze." : "");
+        const folderCount = directories.size;
+        const summary = [];
+        if (uploaded) summary.push(uploaded + " file(s) synced");
+        if (folderCount) summary.push(folderCount + " folder(s) created");
+        setMessage(summary.length ? summary.join(" · ") + " to Backblaze." : "");
       }
     } catch (error) {
-      setStatus("sync failed");
-      setMessage("Sync stopped: " + error.message);
+      const failureMessage = "Sync stopped: " + error.message;
       await loadFolder(targetFolder);
+      setStatus("sync failed");
+      setMessage(failureMessage);
     } finally {
       busy = false;
-      uploadButton.disabled = false;
+      uploadFolderButton.disabled = false;
       newFolderButton.disabled = false;
       refreshButton.disabled = false;
       picker.value = "";
+      folderPicker.value = "";
     }
   }
 
-  uploadButton.addEventListener("click", () => picker.click());
-  picker.addEventListener("change", () => uploadFiles(picker.files));
+  function filesFromPicker(fileList) {
+    return Array.from(fileList || []).map((file) => ({
+      file,
+      relativePath: file.webkitRelativePath || file.name
+    }));
+  }
+
+  function showExhibitionCatalog() {
+    currentExhibitionId = null;
+    currentExhibitionTitle = "";
+    currentPath = "";
+    fileExplorer.hidden = true;
+    exhibitionCatalog.hidden = false;
+    loadExhibitions();
+  }
+
+  async function openExhibition(exhibition) {
+    currentExhibitionId = exhibition.id;
+    currentExhibitionTitle = exhibition.title;
+    currentPath = "";
+    exhibitionCatalog.hidden = true;
+    fileExplorer.hidden = false;
+    await loadFolder("");
+  }
+
+  async function loadExhibitions() {
+    exhibitionCatalogMessage.textContent = "";
+    exhibitionCards.replaceChildren();
+    setStatus("syncing…");
+    try {
+      const result = await callService("list-exhibitions");
+      const exhibitions = Array.isArray(result.exhibitions) ? result.exhibitions : [];
+      exhibitionCount.textContent = exhibitions.length === 0
+        ? "0 exhibitions made. Create a new exhibition to begin!"
+        : exhibitions.length + " of 2 exhibitions made.";
+      exhibitionEmpty.hidden = exhibitions.length > 0;
+
+      exhibitions.forEach((exhibition) => {
+        const card = document.createElement("div");
+        card.className = "exhibition-card-item";
+        card.setAttribute("role", "listitem");
+        const openButton = makeButton("", "exhibition-card", () => openExhibition(exhibition));
+        openButton.style.backgroundColor = exhibition.color || "#d8d8d8";
+        const title = document.createElement("span");
+        title.className = "exhibition-card-title";
+        title.textContent = exhibition.title;
+        openButton.append(title);
+        card.append(openButton);
+
+        if (exhibition.id !== "legacy") {
+          const controls = document.createElement("div");
+          controls.className = "exhibition-card-controls";
+          const color = document.createElement("input");
+          color.type = "color";
+          color.value = exhibition.color || "#d8d8d8";
+          color.setAttribute("aria-label", "Change colour for " + exhibition.title);
+          color.disabled = controlsLocked;
+          color.addEventListener("change", () => updateExhibition(exhibition, { color: color.value }));
+          const rename = makeButton("rename", "", async () => {
+            const nextTitle = window.prompt("Rename exhibition", exhibition.title);
+            if (nextTitle === null || !nextTitle.trim()) return;
+            await updateExhibition(exhibition, { title: nextTitle.trim() });
+          });
+          const remove = makeButton("delete", "", async () => {
+            if (!window.confirm("Delete “" + exhibition.title + "” and all its files? This cannot be undone.")) return;
+            try {
+              await callService("delete-exhibition", { exhibitionId: exhibition.id });
+              await loadExhibitions();
+              exhibitionCatalogMessage.textContent = "Exhibition and its files deleted.";
+            } catch (error) {
+              exhibitionCatalogMessage.textContent = error.message;
+              setStatus("sync failed");
+            }
+          });
+          controls.append(color, rename, remove);
+          card.append(controls);
+        }
+        exhibitionCards.append(card);
+      });
+
+      const addButton = makeButton("", "add-exhibition-card", () => exhibitionNameInput.focus());
+      addButton.disabled = controlsLocked || exhibitions.length >= 2;
+      addButton.title = addButton.disabled
+        ? "The free plan allows up to 2 exhibitions."
+        : "Add another exhibition.";
+      const symbol = document.createElement("span");
+      symbol.className = "add-exhibition-symbol";
+      symbol.textContent = "+";
+      const label = document.createElement("span");
+      label.textContent = "add another exhibition";
+      addButton.append(symbol, label);
+      const addItem = document.createElement("div");
+      addItem.setAttribute("role", "listitem");
+      addItem.append(addButton);
+      exhibitionCards.append(addItem);
+      setStatus("all changes synced");
+      return true;
+    } catch (error) {
+      exhibitionCount.textContent = "Could not load your exhibitions.";
+      exhibitionEmpty.hidden = true;
+      exhibitionCatalogMessage.textContent = error.message;
+      setStatus("sync failed");
+      return false;
+    }
+  }
+
+  async function updateExhibition(exhibition, changes) {
+    if (controlsLocked) return;
+    try {
+      const result = await callService("update-exhibition", {
+        exhibitionId: exhibition.id,
+        ...changes
+      });
+      await loadExhibitions();
+      exhibitionCatalogMessage.textContent = "Exhibition updated.";
+      return result;
+    } catch (error) {
+      exhibitionCatalogMessage.textContent = error.message;
+      setStatus("sync failed");
+      return null;
+    }
+  }
+
+  async function filesFromDrop(dataTransfer) {
+    const files = [];
+    const directories = new Set();
+    const items = Array.from(dataTransfer?.items || []);
+
+    for (const item of items) {
+      if (item.kind !== "file") continue;
+      const entry = typeof item.webkitGetAsEntry === "function" ? item.webkitGetAsEntry() : null;
+      if (entry) {
+        await collectDirectoryEntry(entry, "", files, directories);
+      } else {
+        const file = item.getAsFile();
+        if (file) {
+          files.push({
+            file,
+            relativePath: file.webkitRelativePath || file.name
+          });
+        }
+      }
+    }
+
+    if (!items.length) {
+      for (const file of Array.from(dataTransfer?.files || [])) {
+        files.push({
+          file,
+          relativePath: file.webkitRelativePath || file.name
+        });
+      }
+    }
+    return { files, directories: Array.from(directories) };
+  }
+
+  picker.addEventListener("change", () => uploadItems(filesFromPicker(picker.files)));
+  backToExhibitionsButton.addEventListener("click", showExhibitionCatalog);
+  uploadFolderButton.addEventListener("click", () => folderPicker.click());
+  folderPicker.addEventListener("change", () => uploadItems(filesFromPicker(folderPicker.files)));
   refreshButton.addEventListener("click", () => loadFolder(currentPath));
 
   newFolderButton.addEventListener("click", () => {
@@ -286,15 +578,23 @@
     if (!name) return;
     busy = true;
     newFolderButton.disabled = true;
-    uploadButton.disabled = true;
     refreshButton.disabled = true;
     setStatus("syncing…");
     setMessage("Creating folder…");
     try {
-      await callService("create-folder", { path: currentPath, name });
+      await callService("create-folder", {
+        exhibitionId: currentExhibitionId,
+        path: currentPath,
+        name
+      });
       newFolderForm.reset();
       newFolderForm.hidden = true;
-      await loadFolder(currentPath);
+      const refreshed = await loadFolder(currentPath);
+      if (!refreshed) {
+        setStatus("refresh failed");
+        setMessage("The folder was created, but this folder could not be refreshed. Use refresh to check it.");
+        return;
+      }
       setMessage("Folder created and synced.");
     } catch (error) {
       setStatus("sync failed");
@@ -302,12 +602,41 @@
     } finally {
       busy = false;
       newFolderButton.disabled = false;
-      uploadButton.disabled = false;
       refreshButton.disabled = false;
     }
   });
 
+  exhibitionForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (busy || controlsLocked) return;
+    const title = exhibitionNameInput.value.trim();
+    if (!title) return;
+
+    busy = true;
+    createExhibitionButton.disabled = true;
+    setStatus("syncing…");
+    exhibitionCatalogMessage.textContent = "Creating exhibition…";
+    try {
+      await callService("create-exhibition", {
+        title,
+        color: exhibitionColorInput.value
+      });
+      exhibitionForm.reset();
+      const refreshed = await loadExhibitions();
+      exhibitionCatalogMessage.textContent = refreshed
+        ? "Exhibition created."
+        : "Exhibition created, but the exhibition list could not be refreshed.";
+    } catch (error) {
+      setStatus("sync failed");
+      exhibitionCatalogMessage.textContent = error.message;
+    } finally {
+      busy = false;
+      createExhibitionButton.disabled = controlsLocked;
+    }
+  });
+
   dropZone.addEventListener("dragover", (event) => {
+    if (controlsLocked || !accessToken) return;
     event.preventDefault();
     dropZone.classList.add("is-dragging");
   });
@@ -316,10 +645,17 @@
       dropZone.classList.remove("is-dragging");
     }
   });
-  dropZone.addEventListener("drop", (event) => {
+  dropZone.addEventListener("drop", async (event) => {
+    if (controlsLocked || !accessToken) return;
     event.preventDefault();
     dropZone.classList.remove("is-dragging");
-    uploadFiles(event.dataTransfer?.files);
+    try {
+      const result = await filesFromDrop(event.dataTransfer);
+      await uploadItems(result.files, result.directories);
+    } catch (error) {
+      setStatus("sync failed");
+      setMessage("Could not read the dropped folder: " + error.message);
+    }
   });
   dropZone.addEventListener("keydown", (event) => {
     if ((event.key === "Enter" || event.key === " ") && event.target === dropZone) {
@@ -338,7 +674,7 @@
     let metadata = user.user_metadata || {};
     if (
       metadata.argon_storage_provisioned === true &&
-      Number(metadata.argon_storage_schema_version) >= 2
+      Number(metadata.argon_storage_schema_version) >= 4
     ) return;
 
     let token = metadata.argon_storage_provisioning_token;
@@ -367,7 +703,7 @@
     }
     if (
       refreshed.user.user_metadata?.argon_storage_provisioned !== true ||
-      Number(refreshed.user.user_metadata?.argon_storage_schema_version) < 2
+      Number(refreshed.user.user_metadata?.argon_storage_schema_version) < 4
     ) throw new Error("B2 storage setup is not marked complete yet.");
   }
 
@@ -384,6 +720,7 @@
   }
 
   async function initialize() {
+    setControlsLocked(true);
     setStatus("connecting…");
     const { data: { session }, error } = await supabase.auth.getSession();
     if (error || !session?.user) {
@@ -402,7 +739,8 @@
       await ensureStorageProvisioned(current.user);
       const { data: latestSession } = await supabase.auth.getSession();
       accessToken = latestSession.session?.access_token || accessToken;
-      await loadFolder("");
+      setControlsLocked(false);
+      await loadExhibitions();
     } catch (error) {
       list.replaceChildren();
       const pending = document.createElement("p");
